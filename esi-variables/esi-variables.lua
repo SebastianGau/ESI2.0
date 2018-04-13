@@ -147,7 +147,7 @@ local v,q,t = O:GETVARIABLE(variablepath)
 local v,q,t = O:GETVARIABLE{ path ="aas"}
 local v,q,t = O:GETVARIABLE{object = obj, path ="aas"}
 ```
-]]
+@md]]
 GETVARIABLE = function(self, arg)
   local J = self.json
   local obj = inmation.getself()
