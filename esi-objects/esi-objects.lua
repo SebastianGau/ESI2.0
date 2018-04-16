@@ -384,6 +384,9 @@ Checks existence of an object
 ```lua
 local exists, object = O:EXISTS{path=o:path()}
 local exists, object = O:EXISTS{parentpath=o:parent():path(), objectname=o.ObjectName}
+
+--this checks whether the given table is an inmation object or just a normal lua table
+local exists, object = O:EXISTS{object = o}
 ```lua
 @md]]
 EXISTS = function(self, args)
@@ -416,7 +419,12 @@ EXISTS = function(self, args)
       return true, o
     end
   end
-
+  if args.object then
+    local obj
+    local ok, err = pcall(function() local obj = inmation.getobject(args.object:path()) end)
+    if not ok then return false end
+    return true
+  end
 end,
 
 --kvtab is a table whose keys and values are strings!
@@ -601,32 +609,6 @@ SETCUSTOM = function(self, args)
     error("Could not set custom properties for object " .. args.object:path() .. ", error: " .. err, 2)
   end
 
-end,
-
-
---[[@md
-### VALIDINMATIONOBJECT
-
-Checks whether the given object is a an existing inmation object
-
-```lua
-modLib:SETCUSTOM{object = obj, key = "asd", value = "asd",  disallownewkeys = false}
--- key and value always have to be strings!
-modLib:SETCUSTOM{object = obj, key = {"asd1", "asd2"}, value = {"v1, v2"}}
-```lua
-@md]]
-VALIDINMATIONOBJECT = function(self, obj)
-  if type(obj)=='string' then
-    obj = inmation.getobject(obj)
-    if not obj then
-      return false
-    end
-  end
-  local ok, err = pcall(function() obj:type() end)
-  if not ok then
-    return false
-  end
-  return true
 end,
 }
 return mod

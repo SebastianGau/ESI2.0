@@ -54,6 +54,7 @@ which the command is executed.
 
 Useage
 ```lua
+    local ODBC = require 'esi-odbc'
     ODBC:CONNECT{dsn="dsname", user="user", password="pw"}
 ```
 @md]]

@@ -51,10 +51,6 @@ local v,q,t = O:GETVARIABLE{ path ="aas"}
 local v,q,t = O:GETVARIABLE{object = obj, path ="aas"}
 ```
 
-
-
-
-
 ## Breaking changes
 
 - Not Applicable
