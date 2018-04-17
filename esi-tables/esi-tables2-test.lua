@@ -42,7 +42,7 @@ end
 t:UPDATE
 { 
     WHERE = {Testnumber = 2, col2 = "entry1"}, --a nonexistent column here will result in an error
-    SET = {col3 = "somethingupdated", col4 = "wasupdated"}
+    SET = {col3 = "somethingupdated", col4 = "wasupdated"}, 
 }
 save()
 local selected = t:SELECT
@@ -54,6 +54,7 @@ assert(selected[1].col3~='somethingupdated', "invalid table entry! is " .. tostr
 if teststage==1.5 then
     do return "updated and selected" end
 end
+
 
 --REMOVE EXISTING COLUMN
 t:REMOVECOLUMNS{"col3"}
@@ -81,6 +82,11 @@ if teststage==5 then
 end
 
 
+
+
+------------COOL IDEAS------------
+
+
 --iterator use:
 for _, row in t:SELECT{WHERE = {col1 = "asd"}} do 
     --row is e.g. {col1 = "asd", col2 = 37, col3="34636"}
@@ -96,3 +102,16 @@ local tab = t:SELECT
 { 
     WHERE = {col1 = "asd"}, 
 }:REMOVE() --would be cool, otherwise t:REMOVE{WHERE={col1 = "asd"}}
+
+
+
+--UPDATE/SELECT A SINGLE ROW
+t:UPDATE
+{ 
+    WHERE = {
+        Testnumber = function(val) return val>2 end, 
+        col2 = function(val) return val:find("ent") end
+    },
+    SET = {col3 = "somethingupdated", col4 = "wasupdated"}, 
+    OR = true --or LIKE
+}

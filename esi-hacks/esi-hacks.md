@@ -1,12 +1,12 @@
-# esi-variables
+# esi-hacks
 
-A library for upserting variables and variable groups
+A collection of useful lua-hacks
 
 ## Changes
 
 version | date | description
 ------- | ---- | -----------
-1 | 2018-01-10 | Initial release
+1 | 2018-17-04 | Initial release
 
 ## Available functions
 

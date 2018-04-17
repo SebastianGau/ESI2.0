@@ -1,12 +1,12 @@
-# esi-variables
+# esi-objects
 
-A library for upserting variables and variable groups
+A library for simple and efficient upserting of inmation objects
 
 ## Changes
 
 version | date | description
 ------- | ---- | -----------
-1 | 2018-01-10 | Initial release
+1 | 2018-04-17 | Initial release
 
 ## Available functions
 
