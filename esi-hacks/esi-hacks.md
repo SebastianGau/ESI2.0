@@ -19,6 +19,7 @@ This is a mandatory function for every ESI library.
 Returns a readonly version of a lua table
 
 ```lua
+  hackbox = require 'esi-hacks'
   Directions = hackbox.READONLYTABLE {
     LEFT   = 1,
     RIGHT  = 2,
@@ -30,7 +31,7 @@ Returns a readonly version of a lua table
 
 ### DEEPCOPY
 
-Clones a lua table using recursion.
+Deep-Clones a lua table using recursion.
 
 ```lua
 b = {{},{},{}}

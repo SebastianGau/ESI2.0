@@ -64,10 +64,20 @@ t:UPDATE
     WHERE = {Testnumber = 2, col2 = "entry1"}, --a nonexistent column here will result in an error
     SET = {col3 = "somethingupdated", col4 = "wasupdated"}, 
 }
+--alternative (function/table syntax can also be mixed in WHERE and SET)
+t:UPDATE
+{ 
+    WHERE = function(row) return row.Testnumber==2 and row.col2 == "entry1" end,
+    SET = function(row) row.col3 = "somethingupdatedagain" row.col4 = "wasupdatedagain" end, 
+}
 t:SAVE()
 local selected = t:SELECT
 { 
     WHERE = {col4 = "wasupdated"} 
+}
+local selected = t:SELECT
+{ 
+    WHERE = function(row) return row.col4=="wasupdated" end 
 }
 [[selected has the structure
 {
@@ -90,6 +100,14 @@ if t:COLUMNEXISTS("col3")==true then
     error("Column still exists but should have been deleted!")
 end
 ```
+
+### ROWCOUNT
+
+Self-explanatory.
+
+### COLUMNCOUNT
+
+Self-explanatory.
 
 ## Breaking changes
 

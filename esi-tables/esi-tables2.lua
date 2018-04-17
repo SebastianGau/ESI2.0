@@ -2,6 +2,8 @@
 local esitbllib =
 {
     O = require 'esi-objects',
+    H = require 'esi-hacks',
+    json = require 'dkjson',
 
 
 INFO = function()
@@ -57,6 +59,7 @@ INFO = function()
     self.state.holderobj.TableData = self.state.data
     self.state.holderobj:commit()
     self.state.insync = true
+    --error(self.json.encode(self.state.data)) --values not here
   end,
 
   --problem: sync columns from image with empty table
@@ -239,16 +242,34 @@ end,
  match = function(self, where, row)
   if not where then return true end
   if type(row)~='table' then error("Invalid type for row: " .. type(row)) end
-  for col, val in pairs(where) do
-    if not row[col] then --problem
-      return false
-    else
-      if tostring(row[col]) ~= tostring(where[col]) then
+  if type(where)=='table' then
+    for col, val in pairs(where) do
+      if not row[col] then --problem
         return false
+      else
+        if tostring(row[col]) ~= tostring(where[col]) then
+          return false
+        end
       end
     end
+    return true
+  elseif type(where) =='function' then
+    local rowrep = self.H.DEEPCOPY(row)
+    local match 
+    local ok, err = pcall(function() match = where(rowrep) end)
+    if not ok then
+      local col = self.json.encode(rowrep)
+      error("Match function caused an error at column " .. col .. ": " .. err, 3)
+    end
+    if match then
+      return true
+    end
+  elseif type(where) == 'nil' then
+    return true
+  else
+    error("Invalid type for WHERE-field!", 3)
   end
-  return true
+  return false
 end,
 
 valuetype = function(self, var)
@@ -261,21 +282,45 @@ valuetype = function(self, var)
 end,
 
 update = function(self, set, row)
-  if not set then return true end
   if type(row)~='table' then error("Invalid type for row: " .. type(row)) end
-  for col, val in pairs(set) do
-    if self:columnexists(col) then
-      if self:valuetype(row[col]) then
-        row[col] = set[col]
-        self.state.insync = false
+  if not set then error("no SET given!") end
+  if type(set)=='table' then
+    for col, val in pairs(set) do
+      if self:columnexists(col) then
+        if self:valuetype(row[col]) then
+          row[col] = set[col]
+         -- error("data: "  .. self.json.encode(self.state.data)
+        --.. " row[col]: " .. row[col] .. " set[col]: " .. set[col])
+          self.state.insync = false
+        else
+          error("invalid type: " .. type(set[col]))
+        end
       else
-        error("invalid type: " .. type(set[col]))
+        error("Cannot set nonexistent column, use :ADDCOLUMN before! columnname : " .. tostring(col))
       end
-    else
-      error("Cannot set nonexistent column, use :ADDCOLUMN before! columnname : " .. tostring(col))
     end
+    return true
+  elseif type(set)=='function' then
+    local rowrep = self.H.DEEPCOPY(row)
+    local ok, err = pcall(function()  set(rowrep) end) --error(self.json.encode(rowrep))
+    if not ok then
+      local col = self.json.encode(rowrep)
+      error("Update function caused an error at column " .. col .. ": " .. err, 3)
+    end
+    for colname, _ in pairs(rowrep) do
+      if not self:columnexists(colname) then
+        error("Trying to access nonexisting column in update function: " .. colname, 3)
+      end
+    end
+    for col, val in pairs(rowrep) do
+      row[col] = val
+    end
+    self.state.insync = false
+    return true
+  else
+    error("Invalid type for SET argument: " .. type(set), 3)
   end
-  return true
+  return false
 end,
 
 --  t:UPDATE
@@ -283,23 +328,26 @@ end,
 --     WHERE = {col1 = "asd", col2 = "3"}, --a nonexistent column here will result in an error
 --     SET = {col2 = 4, col3 = "asdasd"}
 -- }
+--  t:UPDATE
+-- { 
+--     WHERE = function(row) return row.col1 == "asd" and row.col2 == "3" end, --optional
+--     SET = function(row) row.col2 = 4 row.col3 = "asdasd" end
+-- }
  UPDATE = function(self, args)
     if not args or type(args)~='table' then error("invalid arguments given: " .. tostring(args), 2) end
-    if not args.SET or type(args.SET)~='table' then
-      error("Invalid SET argument!")
+    if not args.SET or (type(args.SET)~='table' and type(args.SET)~='function') then
+      error("Invalid SET argument: " .. tostring(args.SET))
     end
-
-    local where
-    if args.WHERE and type(args.WHERE)~="table" then
-      error("Where clause has invalid type!", 2)
-    else
-      where = args.WHERE
+    if args.WHERE and type(args.WHERE)~='table' and type(args.WHERE)~='function' then
+      error("Invalid WHERE argument: " .. tostring(args.WHERE))
     end
 
     local updated = 0
     for linenum, row in pairs(self.state.data) do
-      if self:match(where, row) then
-        if self:update(args.SET, row) then updated = updated + 1 end
+      if self:match(args.WHERE, row) then
+        if self:update(args.SET, row) then 
+          updated = updated + 1 
+        end
       end
     end
 
@@ -309,13 +357,13 @@ end,
 
  SELECT = function(self, args)
   if not args or type(args)~='table' then error("invalid arguments given: " .. tostring(args), 2) end
-  if not args.WHERE or type(args.WHERE)~='table' then
+  if not args.WHERE or (type(args.WHERE)~='table' and type(args.WHERE)~='function') then
     error("Invalid WHERE argument!")
   end
 
   local ret = {}
   for linenum, row in pairs(self.state.data) do
-    if self:match(where, row) then
+    if self:match(args.WHERE, row) then
       table.insert(ret, row)
     end
   end
@@ -335,6 +383,14 @@ COLUMNEXISTS = function(self, colname)
     error("Invalid argument for columnname! " .. tostring(colname))
   end
   return self:columnexists(colname)
+end,
+
+COLUMNCOUNT = function(self)
+  return #(self:COLUMNS())
+end,
+
+ROWCOUNT = function(self)
+  return #(self.state.data)
 end,
 
  CLEAR = function(self)

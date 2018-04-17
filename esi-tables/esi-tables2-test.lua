@@ -1,18 +1,16 @@
 local tab = require 'esi-tables'
-local path = inmation.getself():parent():path()
 local json = require 'dkjson'
 
 
 
-
-local teststage = 3
-mode = "persistoncommand"
-name = "testtable"
+local path = inmation.getself():parent():path()
+local teststage = 1.5
+local mode = "persistoncommand"
+local name = "testtable"
 pcall(function() inmation.deleteobject(path .. "/" .. name) end)
 
 local t, existedbefore = tab:NEW{path = path, objectname = name, mode=mode}
 --command creates table if it is not existent or reads it if existent
-
 --this also works:
 -- local t1 = tab:NEW{path = path .. "/testtable", mode="persistoncommand"} 
 -- "persistoncommand" standard, "persistimmediately" resulsts in bad performance but immediate persistance
@@ -39,18 +37,27 @@ end
 
 
 --UPDATE/SELECT A SINGLE ROW
-t:UPDATE
+local updated = t:UPDATE
 { 
     WHERE = {Testnumber = 2, col2 = "entry1"}, --a nonexistent column here will result in an error
     SET = {col3 = "somethingupdated", col4 = "wasupdated"}, 
 }
+assert(updated==1, "should be 1, is " .. updated)
+save()
+local updated = t:UPDATE
+{ 
+    WHERE = function(row) return row.Testnumber == 2 and row.col2 == "entry1" end,
+    SET = function(row) row.col4 = "wasupdatedagain" end
+}
+assert(updated==1, "should be 1, is " .. updated)
 save()
 local selected = t:SELECT
 { 
-    WHERE = {col4 = "wasupdated"} 
+    WHERE = {col3 = "somethingupdated"} 
 }
-assert(#selected~=1, "Invalid number of returned rows should be 1, is " .. #selected)
-assert(selected[1].col3~='somethingupdated', "invalid table entry! is " .. tostring(selected[1].col3))
+assert(#selected==1, "Invalid number of returned rows! Should be 1, is " .. #selected)
+assert(selected[1].col3=='somethingupdated', "invalid table entry! is " .. tostring(selected[1].col3))
+assert(selected[1].col4=="wasupdatedagain", "invalid table entry! is " .. tostring(selected[1].col4))
 if teststage==1.5 then
     do return "updated and selected" end
 end
@@ -81,6 +88,7 @@ if teststage==5 then
     do return "cleared table" end
 end
 
+do return "passed all tests!"
 
 
 
