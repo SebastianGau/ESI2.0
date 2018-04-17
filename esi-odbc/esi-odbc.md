@@ -1,6 +1,6 @@
-# esi-variables
+# esi-odbc
 
-A library for upserting variables and variable groups
+A library for managing ODBC-Connections in lua
 
 ## Changes
 
