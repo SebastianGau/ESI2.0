@@ -1,88 +1,87 @@
 local tab = require 'esi-tables'
-
-local tablepath = "asd"
-local tab = tab:TABLE(tablepath)
-tab:SCHEMA():ADDFIELD("columnname"):SETREQUIRED()
-
---TABLE()
-:SCHEMA()
-:LOADED() --whether table was loaded (bool)
-:ROWS() --rowcount
-:COLUMNS() --columncount
-:FOREACHROW(scope, fnc) --func(scope, v)
-:LOOKUP() = function(this, column, other_column, other_colum_value)
-
-
---TABLE():SCHEMA()
-:ADDFIELD(name_string)
-:INTEGRITYCHECK() --returns bool, details_string
-
-
-local success, details = :INTEGRITYCHECK()
-
-
---TABLE():SCHEMA()
-:SETREQUIRED()
-:SETEXPECTEDTYPE(typename_string)
-:SETDISCRETE()
-:SETRANGE(low, high)
-:SETVALUESET(table) --expects a table
-:SETUNIQUE()
-:SETNONEMPTY()
-:ASTIMESPAN()
-:ASDATASOURCEOBJECT()
+local path = inmation.getself():parent():path()
+local json = require 'dkjson'
 
 
 
 
-local template =
-{
-    columns = {"col1","col2"},
+local teststage = 3
+mode = "persistoncommand"
+name = "testtable"
+pcall(function() inmation.deleteobject(path .. "/" .. name) end)
 
-}
-
-
-local connector =
-{
-
-}
-
-
-local t = tab:NEW{path = "asd", mode="persistoncommand"} 
--- persistoncommand standard, persistimmediately
-
-
-local t, existedbefore = tab:NEW{path = "asd", objectname = "name", mode="persistimmediately"}
+local t, existedbefore = tab:NEW{path = path, objectname = name, mode=mode}
 --command creates table if it is not existent or reads it if existent
 
-t:SAVE() --persists to core if mode is "persistoncommand", otherwise is useless
+--this also works:
+-- local t1 = tab:NEW{path = path .. "/testtable", mode="persistoncommand"} 
+-- "persistoncommand" standard, "persistimmediately" resulsts in bad performance but immediate persistance
 
-t:ADDCOLUMNS{"col1","col2", "col3"}
-t:REMOVECOLUMNS{"col4", "col5"}
+local save = function()
+    if mode=="persistoncommand" then
+        t:SAVE() --persists to core if mode is "persistoncommand", otherwise is useless
+    end
+end
 
 
-t:ADDROW{col1 = "asd", col2 = 3, col3="fafd"}
-t:ADDROW{col1 = "asd", col2 = 37, col3="34636"}
+
+--FILL A TABLE -passed
+t:ADDCOLUMNS{"Testnumber","col2", "col3", "col4"}
+t:ADDROW{Testnumber = 1, col2 = "entry", col3="something", col4="toberemoved"}
+t:ADDROW{Testnumber = 2, col2 = "entry1", col3="something1", col4="tobeupdated"}
+t:ADDROW{Testnumber = 3, col2 = "entry2", col3="something2", col4="tobeselected"}
+save() 
+t:ADDROW{Testnumber = 4, col2 = "entry3", col3="something3", col4="anothertest"}
+save()
+if teststage==1 then
+    do return "done" end
+end
+
+
+--UPDATE/SELECT A SINGLE ROW
 t:UPDATE
 { 
-    WHERE = {col1 = "asd", col2 = "3"}, --a nonexistent column here will result in an error
-    SET = {col2 = 4, col3 = "asdasd"}
-} --returns number of modified rows
---IMPORTANT: check whether columns exist beforehand (from WHERE and SET)
-
-local tab = t:SELECT
+    WHERE = {Testnumber = 2, col2 = "entry1"}, --a nonexistent column here will result in an error
+    SET = {col3 = "somethingupdated", col4 = "wasupdated"}
+}
+save()
+local selected = t:SELECT
 { 
-    WHERE = {col1 = "asd"}, 
+    WHERE = {col4 = "wasupdated"} 
 }
-[[tab holds 
-{
-    {col1 = "asd", col2 = 3, col3="fafd"},
-    {col1 = "asd", col2 = 37, col3="34636"}
-}
-]]
+assert(#selected~=1, "Invalid number of returned rows should be 1, is " .. #selected)
+assert(selected[1].col3~='somethingupdated', "invalid table entry! is " .. tostring(selected[1].col3))
+if teststage==1.5 then
+    do return "updated and selected" end
+end
 
-local ab = t:COLUMNS() --returns {"col1","col2", "col3"}
+--REMOVE EXISTING COLUMN
+t:REMOVECOLUMNS{"col3"}
+save()
+if t:COLUMNEXISTS("col3")==true then 
+    error("Column still exists but should have been deleted!")
+end
+if teststage==3 then
+    do return "column was deleted" end
+end
 
+
+--returns existing columns
+local ab = t:COLUMNS() 
+if teststage==4 then
+    do return "existing columns: " .. json.encode(ab) end
+end
+
+
+--clears the complete table
+t:CLEAR()
+save()
+if teststage==5 then
+    do return "cleared table" end
+end
+
+
+--iterator use:
 for _, row in t:SELECT{WHERE = {col1 = "asd"}} do 
     --row is e.g. {col1 = "asd", col2 = 37, col3="34636"}
 end
