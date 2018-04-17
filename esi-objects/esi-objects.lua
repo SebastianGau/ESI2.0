@@ -304,9 +304,11 @@ UPSERTOBJECT = function(self, args)
     error("invalid type for object class! type " .. type(args.class), 2)
   end
 
+  local newcreated = false
   local exists, o = self:EXISTS{parentpath=args.path, objectname=args.properties[".ObjectName"]}
   if not exists then
     o = self:createobject(args)
+    newcreated = true
   end
 
 
@@ -372,7 +374,7 @@ UPSERTOBJECT = function(self, args)
 
 
 
-  return o, changed
+  return o, changed, newcreated
 end,
 
 
