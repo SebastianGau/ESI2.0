@@ -40,38 +40,49 @@ INFO = function()
     },
     library = {
       -- Filename is always "lib-" .. modulename and the modulename must be used for the ScriptLibrary.LuaModuleName property.
-      modulename = "esi-objects"
+      modulename = "esi-objects",
+      dependencies = {
+        {
+          modulename = 'dkjson',
+          version = {
+            major = 0,
+            minor = 1,
+            revision = 1
+          }
+        },
+      }
     }
   }
 end,
 
 
-  json = require 'dkjson',
+  JSON = require 'dkjson',
+  
   --properties deciding about subobject types or mandatory properties have to bet set first!
-  priority =
+  _priority =
     {
       [".ChartType"] = 1, 
       [".ObjectName"] = 2,
       [".ItemID"] = 3
     },
 
-  properties = function(self, kv, args)
+  _properties = function(self, kv, args)
 		-- collect the keys
 		local keys = {}
     for k in pairs(kv) do 
       if args.importantonly then
-        if self.priority[k] then
+        if self._priority[k] then
           keys[#keys+1] = k --add only priorized keys
         end
       else
-        if not self.priority[k] then
+        if not self._priority[k] then
           keys[#keys+1] = k --add only non priorized keys
         end
       end
     end
     table.sort(keys, function(a,b)
-      if self.priority[a] and self.priority[b] then
-        return self.priority[a] < self.priority[b]
+      if self._priority[a] and self._priority[b] then
+        return self._priority[a] < self._priority[b]
       end
       return #a<#b
     end)
@@ -85,7 +96,7 @@ end,
 		end
 	end,
 
-  sortedpairs = function(self, kv, order)
+  _sortedpairs = function(self, kv, order)
 		-- collect the keys
 		local keys = {}
 		for k in pairs(kv) do keys[#keys+1] = k end
@@ -96,13 +107,13 @@ end,
 			table.sort(keys, function(a,b) return order(t, a, b) end)
 		else
       table.sort(keys, function(a,b)
-        if self.priority[a] and self.priority[b] then
-          return self.priority[a] < self.priority[b]
+        if self._priority[a] and self._priority[b] then
+          return self._priority[a] < self._priority[b]
         end
-        if self.priority[a] and not self.priority[b] then
+        if self._priority[a] and not self._priority[b] then
           return true
         end
-        if not self.priority[a] and self.priority[b] then
+        if not self._priority[a] and self._priority[b] then
           return false
         end
         return #a<#b
@@ -121,7 +132,7 @@ end,
 
   --helper for tryapply
   --compares the read property with the written property
-  equal = function(v1, v2)
+  _equal = function(v1, v2)
     if type(v1)==type(v2) and type(v1)~="table" and type(v2)~="table" then
       return tostring(v1)==tostring(v2)
     elseif type(v1)=="table" and type(v2)=="table" then
@@ -150,34 +161,34 @@ end,
   end,
 
   --helper for setproperty
-  tryapply = function(self, o, name, val)
+  _tryapply = function(self, o, name, val)
     local t = {}
     for i in string.gmatch(name, "%a+") do
       table.insert(t, i)
     end
     if #t == 1 then
-        if not self.equal(o[t[1]], val) then
+        if not self._equal(o[t[1]], val) then
             o[t[1]] = val
             return true
         else
             return false
         end
     elseif #t == 2 then
-        if not self.equal(o[t[1]][t[2]], val) then
+        if not self._equal(o[t[1]][t[2]], val) then
             o[t[1]][t[2]] = val
             return true
         else
             return false
         end
     elseif #t == 3 then
-        if not self.equal(o[t[1]][t[2]][t[3]], val) then
+        if not self._equal(o[t[1]][t[2]][t[3]], val) then
             o[t[1]][t[2]][t[3]] = val
             return true
         else
             return false
         end
     elseif #t == 4 then
-        if not self.equal(o[t[1]][t[2]][t[3]][t[4]], val) then
+        if not self._equal(o[t[1]][t[2]][t[3]][t[4]], val) then
             o[t[1]][t[2]][t[3]][t[4]] = val
             return true
         else
@@ -192,12 +203,12 @@ end,
 --even works for "table-like" properties object.a.b.c = "asd"
 --returns true if the object was changed (some value was inserted)
 --otherwise false
-setproperty = function(self, o, name, val)
-  local ok, res = pcall(function() return self:tryapply(o, name, val) end)
+_setproperty = function(self, o, name, val)
+  local ok, res = pcall(function() return self:_tryapply(o, name, val) end)
   if ok then
     return res
   else
-    error("Could not set property " .. name .. " to value " .. self.json.encode({value = val}) .. " due to error " .. res)
+    error("Could not set property " .. name .. " to value " .. self.JSON.encode({value = val}) .. " due to error " .. res)
   end
 end,
 
@@ -208,17 +219,17 @@ end,
 --     ["customkey"] = "customvalue",
 --     ["customkey1"] = "customvalue1"
 --   }
-setcustomproperties = function(self, o, properties)
+_setcustomproperties = function(self, o, properties)
   local changed = false
   for customkey, customvalue in pairs(properties) do
-    changed = changed or self:setcustom(o, customkey, customvalue, true)
+    changed = changed or self:_setcustom(o, customkey, customvalue, true)
   end
   return changed
 end,
 
 
 
-createobject = function(self, args)
+_createobject = function(self, args)
   local ok, err = pcall(function()
     o = inmation.createobject(args.path, args.class)
   end)
@@ -228,9 +239,9 @@ createobject = function(self, args)
   if o == nil then
     error("unexpected error, object of type " .. objtype .. " at path " .. pa .. " was not created! ObjectName " .. name)
   end
-  for key, value in self:properties(args.properties, {importantonly=true}) do
+  for key, value in self:_properties(args.properties, {importantonly=true}) do
     local ok, err = pcall(function()
-      self:setproperty(o, key, value)
+      self:_setproperty(o, key, value)
     end)
   end
 
@@ -242,9 +253,9 @@ createobject = function(self, args)
     error(mess:format(err))
   end
 
-  for key, value in self:properties(args.properties, {importantonly=false}) do
+  for key, value in self:_properties(args.properties, {importantonly=false}) do
     local ok, err = pcall(function()
-      self:setproperty(o, key, value)
+      self:_setproperty(o, key, value)
     end)
   end
   o:commit()
@@ -307,7 +318,7 @@ UPSERTOBJECT = function(self, args)
   local newcreated = false
   local exists, o = self:EXISTS{parentpath=args.path, objectname=args.properties[".ObjectName"]}
   if not exists then
-    o = self:createobject(args)
+    o = self:_createobject(args)
     newcreated = true
   end
 
@@ -319,10 +330,10 @@ UPSERTOBJECT = function(self, args)
   local fails = false
   local success = {}
   local errs = {}
-  for key, value in self:sortedpairs(args.properties) do
+  for key, value in self:_sortedpairs(args.properties) do
     if not string.find(key:lower(), "custom") then --string.find(key, "%.") and 
       local ok, err = pcall(function()
-          changed = changed or self:setproperty(o, key, value)
+          changed = changed or self:_setproperty(o, key, value)
         end)
         if not ok then
           local m = "Could not set property " .. tostring(key) .. " to value " .. tostring(value) .. " due to error " .. err
@@ -333,7 +344,7 @@ UPSERTOBJECT = function(self, args)
         end
     elseif tostring(key) == "Custom" then
       local ok, err = pcall(function()
-          changed = changed or self:upsertcustom(o, value, true)
+          changed = changed or self:_upsertcustom(o, value, true)
         end)
         if not ok then
           local m = "Could not set property " .. tostring(key) .. " to value " .. tostring(value) .. " due to error " .. err
@@ -355,10 +366,10 @@ UPSERTOBJECT = function(self, args)
     goto retry
   elseif fails and retrycounter>2 then
     --DEBUG
-    local props = self.json.encode(args.properties)
+    local props = self.JSON.encode(args.properties)
     local name = o.ObjectName or "NIL"
-    local errs = self.json.encode(errs)
-    local succ = self.json.encode(success)
+    local errs = self.JSON.encode(errs)
+    local succ = self.JSON.encode(success)
 
     local mess = "Could not upsert object! Properties: %s, Errors: %s, ObjectName: %s, Successful Property Writes: %s"
     mess = mess:format(props, errs, name, succ)
@@ -378,19 +389,6 @@ UPSERTOBJECT = function(self, args)
 end,
 
 
---[[@md
-### EXISTS
-
-Checks existence of an object
-
-```lua
-local exists, object = O:EXISTS{path=o:path()}
-local exists, object = O:EXISTS{parentpath=o:parent():path(), objectname=o.ObjectName}
-
---this checks whether the given table is an inmation object or just a normal lua table
-local exists, object = O:EXISTS{object = o}
-```lua
-@md]]
 EXISTS = function(self, args)
   if args.path then
     if type(args.path)~='string' then
@@ -493,7 +491,7 @@ GETCUSTOM = function(self, args)
     if not args.object then
         error("field 'object' is not existent in the args table!", 2)
     end
-    if not self:VALIDINMATIONOBJECT(args.object) then
+    if not self:EXISTS(args.object) then
         error("field 'object' does not hold a valid inmation object!", 2)
     end
     if not args.key then
@@ -562,10 +560,13 @@ SETCUSTOM = function(self, args)
   if not args then
     error("arguments are empty!", 2)
   end
+  if type(args)~='table' then
+    error("Invalid argument type!", 2)
+  end
   if not args.object then
     error("field 'object' is not existent in the args table!", 2)
   end
-  if not self:VALIDINMATIONOBJECT(args.object) then
+  if not self:EXISTS(args.object) then
     error("field 'object' does not hold a valid inmation object!", 2)
   end
   if not args.key then
@@ -592,7 +593,7 @@ SETCUSTOM = function(self, args)
   --non-table keys/values
   if type(args.key) ~= 'table' and type(args.value) ~= 'table' then
     local ok, err = pcall(function() 
-      self:upsertcustom(args.object, {[args.key] = args.value}, createkeys) 
+      self:_upsertcustom(args.object, {[args.key] = args.value}, createkeys) 
     end)
     if not ok then
       error("Could not set custom properties for object " .. args.object:path() .. ", error: " .. err)
@@ -606,11 +607,69 @@ SETCUSTOM = function(self, args)
       kvtab[args.key[i]] = args.value[i]
     end
   end
-  local ok, err = pcall(function() self:upsertcustom(args.object, kvtab, createkeys)  end)
+  local ok, err = pcall(function() self:_upsertcustom(args.object, kvtab, createkeys)  end)
   if not ok then
     error("Could not set custom properties for object " .. args.object:path() .. ", error: " .. err, 2)
   end
+end,
 
+
+SORTCUSTOM = function(self, args)
+  --check arguments
+  if not args then
+    error("arguments are empty!", 2)
+  end
+  if type(args)~='table' then
+    error("Invalid argument type!", 2)
+  end
+  if not args.object then
+    error("field 'object' is not existent in the args table!", 2)
+  end
+  if not self:EXISTS(args.object) then
+    error("field 'object' does not hold a valid inmation object!", 2)
+  end
+  if not args.key then
+    error("There are no custom key(s) given!", 2)
+  end
+  if not args.value then
+    error("There are no custom value(s) given!", 2)
+  end
+  if type(args.key) ~= 'string' and type(args.key) ~= 'table' then
+    error("Invalid type for key: " .. type(args.key))
+  end
+  if type(args.value) ~= 'string' and type(args.value) ~= 'table' then
+    error("Invalid type for key: " .. type(key))
+  end
+  if type(args.value) == 'table' and type(args.key) == 'table' and #args.value ~= #args.key
+  then
+    error("Key and value table need to have the same length! " .. #args.key .. " vs " .. #args.value, 2)
+  end
+  local createkeys = true
+  if args.disallownewkeys then
+    createkeys = false
+  end
+
+  --non-table keys/values
+  if type(args.key) ~= 'table' and type(args.value) ~= 'table' then
+    local ok, err = pcall(function() 
+      self:_upsertcustom(args.object, {[args.key] = args.value}, createkeys) 
+    end)
+    if not ok then
+      error("Could not set custom properties for object " .. args.object:path() .. ", error: " .. err)
+    end
+  end
+
+  --table key/values
+  local kvtab = {}
+  for i=1, #(args.key) do
+    if args.key[i] then
+      kvtab[args.key[i]] = args.value[i]
+    end
+  end
+  local ok, err = pcall(function() self:_upsertcustom(args.object, kvtab, createkeys)  end)
+  if not ok then
+    error("Could not set custom properties for object " .. args.object:path() .. ", error: " .. err, 2)
+  end
 end,
 }
 return mod

@@ -33,14 +33,22 @@ Useage
       },
       library = {
         -- Filename is always "lib-" .. modulename and the modulename must be used for the ScriptLibrary.LuaModuleName property.
-        modulename = "esi-odbc"
+        modulename = "esi-odbc",
+        dependencies = {
+          {
+            modulename = 'luasql.odbc',
+            version = {
+              major = 0,
+              minor = 1,
+              revision = 1
+            }
+          },
+        }
       }
     }
   end,
 
-
   driver = require "luasql.odbc",
-  json = require 'json',
   connection = nil,
   environment = nil,
   name = "", --dsn

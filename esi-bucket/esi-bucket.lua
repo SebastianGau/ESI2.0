@@ -1,8 +1,8 @@
 -- esi-hacks
-local hackbox = hackbox or {}
+local bucket = bucket or {}
 
 
-hackbox.INFO = function()
+bucket.INFO = function()
     return {
       version = {
         major = 0,
@@ -21,15 +21,20 @@ hackbox.INFO = function()
       },
       library = {
         -- Filename is always "lib-" .. modulename and the modulename must be used for the ScriptLibrary.LuaModuleName property.
-        modulename = "esi-hacks"
+        modulename = "esi-bucket"
+      },
+      dependencies = {
+        {
+
+        },
       }
     }
 end
 
 
-function hackbox.READONLYTABLE(table)
+function bucket.READONLYTABLE(table)
   -- useage:
-  -- Directions = hackbox.READONLYTABLE {
+  -- Directions = bucket.READONLYTABLE {
   --   LEFT   = 1,
   --   RIGHT  = 2,
   --   UP     = 3,
@@ -51,19 +56,19 @@ end
 
 
 
-local hackbox = hackbox or {}
+local bucket = bucket or {}
 
-function hackbox.DEEPCOPY (t) 
+function bucket.DEEPCOPY (t) 
   -- deep-copy a table (used for oop object initialization)
   -- useage:
   --  b = {{},{},{}}
-  --  c = hackbox.DEEPCOPY(b)
+  --  c = bucket.DEEPCOPY(b)
   if type(t) ~= "table" then return t end
   local meta = getmetatable(t)
   local target = {}
   for k, v in pairs(t) do
     if type(v) == "table" then
-      target[k] = hackbox.deepcopy(v)
+      target[k] = bucket.deepcopy(v)
     else
       target[k] = v
     end
@@ -76,9 +81,9 @@ end
 
 
 
-local hackbox = hackbox or {}
+local bucket = bucket or {}
 
-hackbox.MEMO = function(f)
+bucket.MEMO = function(f)
   --  ----useage example:
   --  function triangle(x)
   --    if x == 0 then 
@@ -89,7 +94,7 @@ hackbox.MEMO = function(f)
 
   ----print(triangle(40000)) -- stack overflow: too much recursion
 
-  --  triangle = hackbox.MEMO(triangle) -- make triangle function memoized, so it "remembers" previous results
+  --  triangle = bucket.MEMO(triangle) -- make triangle function memoized, so it "remembers" previous results
 
   ---- seed triangle's cache
   --  for i=0, 40000 do 
@@ -193,11 +198,11 @@ end
 
 
 
-local hackbox = hackbox or {}
+local bucket = bucket or {}
 
-function hackbox.AUTOMAGICTABLE()
+function bucket.AUTOMAGICTABLE()
   --can be used to init a.b.c.d automatically
-  --a = hackbox.AUTOMAGICTABLE()
+  --a = bucket.AUTOMAGICTABLE()
   --a.b.c.d = "a.b and a.b.c are automatically created"
   local auto, assign
 
@@ -233,62 +238,5 @@ function hackbox.AUTOMAGICTABLE()
   return CreateAutomagicTable()
 end
 
-
-
-
-function hackbox.examples()
-  
-  -- hackbox.readonlytable
-  -- useage:
-  Directions = hackbox.readonlytable {
-    LEFT   = 1,
-    RIGHT  = 2,
-    UP     = 3,
-    DOWN   = 4,
-  }
-  -- Directions.Left = 5 --raises an error
-
-
-
-
-  -- hackbox.deepcopy(table)
-  -- deep-copy a table (used for oop object initialization)
-  -- useage:
-  b = {{},{},{}}
-  c = hackbox.deepcopy(b)
-
-  
-  
-  
-  --hackbox.memo(function)
-  --  ----useage example:
-  function triangle(x)
-    if x == 0 then 
-      return 0 
-    end
-    return x+triangle(x-1)
-  end
-
-  --print(triangle(40000)) -- stack overflow: too much recursion
-
-  triangle = hackbox.memo(triangle) -- make triangle function memoized, so it "remembers" previous results
-
-  -- seed triangle's cache
-  for i=0, 40000 do 
-    triangle(i)
-  end 
-
-  -- print(triangle(40000)) -- 800020000, instantaneous result
-
-
-  --hackbox.AutomagicTable()
-  --can be used to init a.b.c.d automatically
-  a = hackbox.AutomagicTable()
-  a.b.c.d = "a.b and a.b.c are automatically created"
-
-
-
-
-end
-return hackbox
---hackbox.examples()
+return bucket
+--bucket.examples()

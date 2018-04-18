@@ -31,12 +31,12 @@ ommited for brevity
 
 ### SETVARIABLE
 
-Upserts a variable underneath the code-executing object and sets its value. Tables are automatically converted to json.
+Upserts a variable object underneath the code-executing object and sets its value. Tables are automatically converted to json.
 
 ```lua
 SETVARIABLE(path, v, q, t)
-SETVARIABLE({path ="aas", v=1.4, q=1,t=2348763284767})
-SETVARIABLE({path ="aas", v=1.4, q=1,t=2348763284767, json = {indent = true}})
+SETVARIABLE{path ="aas", v=1.4, q=1,t=2348763284767}
+SETVARIABLE{path ="aas", v=1.4, q=1,t=2348763284767, json = {indent = true}}
 SETVARIABLE({object = obj, path ="aas", v=1.4, q=1,t=2348763284767, json = {indent = true}})
 ```
 

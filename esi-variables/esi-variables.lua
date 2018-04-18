@@ -40,7 +40,33 @@ ommited for brevity
       },
       library = {
         -- Filename is always "lib-" .. modulename and the modulename must be used for the ScriptLibrary.LuaModuleName property.
-        modulename = "esi-variables"
+        modulename = "esi-variables",
+        dependencies = {
+          {
+            modulename = 'dkjson',
+            version = {
+              major = 0,
+              minor = 1,
+              revision = 1
+            }
+          },
+          {
+            modulename = 'esi-objects',
+            version = {
+              major = 0,
+              minor = 1,
+              revision = 1
+            }
+          },
+          {
+            modulename = 'inmation.String',
+            version = {
+              major = 0,
+              minor = 1,
+              revision = 1
+            }
+          }
+        }
       }
     }
   end,

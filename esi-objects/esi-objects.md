@@ -35,6 +35,34 @@ local o, changed = O:UPSERTOBJECT({path=inmation.getself():parent():path(),
     properties = properties})
 ```
 
+Chart Example:
+
+```lua
+local prop = 
+{
+  [".ObjectName"] = "testchartname",
+  [".ObjectDescription"] = "testdesc",
+  [".ChartType"] = 2, -- paretochart
+  [".ParetoChart.KPIYAxisLabel"] = "Signal Contribution [%]", 
+  [".ParetoChart.KPIXAxisLabel"] = "xlabel", 
+  [".ParetoChart.KPIBarSettings.KPIBar"] = {h1:path(), h2:path()}, 
+  [".ParetoChart.KPIBarSettings.AggregateSelection"] = {40, 40}, 
+  [".ParetoChart.KPIBarSettings.KPIBarName"] = {"test1", "test2"}, 
+  [".ParetoChart.KPIBarSettings.KPIBarColor"] = {inmation.model.codes.KPIColors.RED, inmation.model.codes.KPIColors.RED}, 
+  [".ParetoChart.KPIBarSettings.KPIBarOffset"] = {" ", " "},
+  Custom =
+  {
+    ["customkey"] = "customvalue",
+    ["customkey1"] = "customvalue1"
+  }
+}
+
+local o, changed = O:UPSERTOBJECT
+{path="/BASF/Predictive Maintenance Test/EMEA/Ludwigshafen/Technische Gase/NV6300/Machine", 
+    class = "MODEL_CLASS_CHART", 
+    properties=prop}
+```
+
 ### EXISTS
 
 Checks existence of an object
@@ -65,6 +93,10 @@ modLib:SETCUSTOM{object = obj, key = "asd", value = "asd",  disallownewkeys = fa
 -- key and value always have to be strings!
 modLib:SETCUSTOM{object = obj, key = {"asd1", "asd2"}, value = {"v1, v2"}}
 ```
+
+### SORTCUSTOM
+
+To come...
 
 ## Breaking changes
 

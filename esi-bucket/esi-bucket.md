@@ -1,4 +1,4 @@
-# esi-hacks
+# esi-bucket
 
 A collection of useful lua-hacks
 
@@ -74,4 +74,3 @@ Creates nested tables automatically.
 ## Breaking changes
 
 - Not Applicable
-  - hte
