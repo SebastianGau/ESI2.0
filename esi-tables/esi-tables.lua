@@ -219,13 +219,6 @@ INFO = function()
     self.state.schema = schema
   end,
 
-
-  _schemacheck = function(self)
-    if not self.state.schema then return nil end
-
-  end,
-
-
   SETSCHEMA = function(self, schema)
     local ok, err = self:_validateinputschema(schema)
     if not ok then
@@ -242,21 +235,25 @@ INFO = function()
     if not schema then error("No schema was set!", 2) end
 
     if schema.maxrows and self:ROWCOUNT() > schema.maxrows then 
-      table.insert(fails, "Maximum number of rows exceeded! Count " .. self:ROWCOUNT() .. ", maximum " .. schema.maxrows)
+      table.insert(fails, "Maximum number of rows exceeded! Count: " .. self:ROWCOUNT() .. ", maximum according to schema: " .. schema.maxrows)
     end
 
     for _, col in pairs(schema.columns) do
       --check required columns
       if self:COLUMNEXISTS(col.name)==false and col.required then
-        table.insert(fails, "mandatory column " .. col.name .. " is missing")
+        table.insert(fails, "Mandatory column " .. col.name .. " is missing!")
+        goto skipcolumn
       end
       --start to check the column
       local seen = {}
       for i=1, #(data) do
         local val = data[i][col.name]
         --check emptyness
-        if val==self.config.emptyidentifier and col.nonempty then
+        if tostring(val)==tostring(self.config.emptyidentifier) and col.nonempty then
           table.insert(fails, "empty value for " .. col.name .. " at index " .. i)
+          local h = self.JSON.encode(self.H.DEEPCOPY(data))
+          error("data: " .. h)
+          goto skiptherest
         end
         --check uniqueness
         if seen[val] and col.unique then
@@ -280,12 +277,14 @@ INFO = function()
             end
           end
         end
+        ::skiptherest::
       end
+      ::skipcolumn::
     end
-    if #fails>0 then
+    if #fails==0 then
       return true
     else
-      return nil, table.concat(fails, "\n")
+      return false, table.concat(fails, ", \n")
     end
   end,
 
@@ -412,7 +411,7 @@ end,
     end
     --this is only necessary if self.config.empty is not nil so that "empty" table cells have a default value
     for existingcolumn, _ in pairs(self.state.columns) do
-      if not row[existingcolumn] then
+      if type(row[existingcolumn])=='nil' then
         row[existingcolumn] = self.config.emptyidentifier
       end
     end

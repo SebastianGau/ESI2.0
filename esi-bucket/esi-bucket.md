@@ -1,6 +1,6 @@
 # esi-bucket
 
-A collection of useful lua-hacks
+A collection of useful lua-hacks / tricks
 
 ## Changes
 

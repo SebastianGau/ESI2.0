@@ -1,26 +1,6 @@
 -- esi-objects
 local mod =
 {
---[[@md 
-### INFO
-
-This is a mandatory function for every ESI library.
-
-Usage
-
-```lua
-    local JSON = require('dkjson')
-    local ESI = require('esi-example')
-    local result = ESI:INFO()
-    error(JSON.encode(result))
-```
-
-Example response
-
-```lua
-ommited for brevity
-```
-@md]]
 INFO = function()
   return {
     version = {

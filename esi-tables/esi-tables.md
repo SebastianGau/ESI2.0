@@ -107,6 +107,113 @@ Self-explanatory.
 
 Self-explanatory.
 
+### SETSCHEMA / VALIDATESCHEMA
+
+Enables to check the table against given schemes.
+
+```lua
+local path = inmation.getself():parent():path()
+local mode = "persistoncommand"
+local name = "schematable"
+pcall(function() inmation.deleteobject(path .. "/" .. name) end)
+local t, existedbefore = tab:NEW{path = path, objectname = name, mode=mode}
+
+--build table
+t:ADDCOLUMNS{"columnname1","columnname2","columnname3"}
+t:ADDROW{columnname1 = 1, columnname2 = "entry", columnname3 = false}
+t:ADDROW{columnname1 = 2, columnname2 = "entry1", columnname3 = true}
+t:ADDROW{columnname1 = 3, columnname2= "entry2", columnname3 = true}
+t:SAVE()
+
+--try to pass an invalid schema
+local schema =
+{
+    columns = 
+    {
+        {
+            nameCAUSESFAIL = "columnname1", --this causes the check to fail
+            required = true,
+            unique = true,
+            nonempty = true,
+            valueset = {1, 2, 3},
+        },
+        {
+            name = "columnname1", --this would not cause an error
+            required = true, --the column is mandatory
+            unique = true, --the column has to feature unique values
+            nonempty = true, --all values in the column have to be nonemoty
+            valueset = {1, 2, 3}, --means that the values in the table have to be either 1, 2 or 3
+        },
+    },
+    maxrows = 3,
+}
+
+local ok, err = pcall(t:SETSCHEMA(schema))
+if ok then
+    error("The schema structure was invalid and should have caused an error!")
+end
+
+--the schema always has to look like this
+--non-existing columns in the schema.columns array will not be validated in the table (i.e. the table can have more columns than shown here)
+local schema =
+{
+    columns = 
+    {
+        {
+            name = "columnname1",
+            required = true, --the column is mandatory
+            unique = true, --the column has to feature unique values
+            nonempty = true, --all values in the column have to be nonemoty
+            valueset = {1, 2, 3}, --means that the values in the table have to be either 1, 2 or 3
+        },
+        {
+            name = "columnname2",
+            required = true,
+            unique = true,
+            nonempty = true,
+            valueset = {luatype="string"},
+        },
+        {
+            name = "columnname3",
+            required = true,
+            unique = false,
+            nonempty = true,
+            valueset = {luatype="boolean"},
+        },
+    },
+    maxrows = 3,
+}
+
+t:SETSCHEMA(schema)
+--test whether the table is successfully validated
+local res, err = t:VALIDATESCHEMA()
+if not res then
+    error("The check failed with " .. err .. " but should have passed!")
+end
+--test whether it is recognized if the table does not follow the schema
+local updated = t:UPDATE{
+    WHERE = function(row) return row.columnname1 == 3 end,
+    SET = function(row) row.columnname3 = "asd" end, 
+    --table now violates the schema since it is of type boolean
+}
+if updated~=1 then error("Invalid update count!") end
+local updated = t:UPDATE{
+    WHERE = function(row) return row.columnname2 == "entry1" end,
+    SET = function(row) row.columnname2 = "entry" end, 
+    --table now violates the schema since values are not unique within the column anymore
+}
+if updated~=1 then error("Invalid update count!") end
+local updated = t:UPDATE{
+    WHERE = function(row) return row.columnname1 == 3 end,
+    SET = function(row) row.columnname1 = 4 end, 
+    --table now violates the schema since only values 1,2,3 are allowed
+}
+if updated~=1 then error("Invalid update count!") end
+t:SAVE()
+local res, err = t:VALIDATESCHEMA()
+if res then error("This test should have failed!") end
+```
+
 ## Breaking changes
 
 - Not Applicable
