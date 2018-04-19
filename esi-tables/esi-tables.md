@@ -27,6 +27,14 @@ local t, existedbefore = tab:NEW{path = path, objectname = "testtable", mode="pe
 local t1 = tab:NEW{path = path .. "/testtable", mode="persistoncommand"} 
 ```
 
+### SAVE
+
+Persists the changes to the table holder. Is unnecessary if mode == "persistoncommand". Note that mode == "persistimmediately" results in a significant performance loss. You should try to work in-memory as far as possible and persist by using the :SAVE() command afterwards.
+
+```lua
+t:SAVE()
+```
+
 ### ADDROW / ADDCOLUMNS
 
 Self-explaining.
@@ -83,9 +91,7 @@ local selected = t:SELECT
 ]]
 ```
 
-### SAVE
 
-Persists the changes to the table holder. Is unnecessary if mode == "persistoncommand"
 
 ### REMOVECOLUMNS / COLUMNEXISTS
 
@@ -141,7 +147,7 @@ local schema =
             name = "columnname1", --this would not cause an error
             required = true, --the column is mandatory
             unique = true, --the column has to feature unique values
-            nonempty = true, --all values in the column have to be nonemoty
+            nonempty = true, --all values in the column have to be nonempty
             valueset = {1, 2, 3}, --means that the values in the table have to be either 1, 2 or 3
         },
     },
