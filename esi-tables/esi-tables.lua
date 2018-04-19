@@ -4,6 +4,7 @@ local esitbllib =
     O = require 'esi-objects',
     H = require 'esi-bucket',
     JSON = require 'dkjson',
+    SCHEMA = require 'esi-schema',
 
 
 INFO = function()
@@ -34,9 +35,9 @@ INFO = function()
           {
             modulename = 'dkjson',
             version = {
-              major = 0,
-              minor = 1,
-              revision = 1
+              major = 2,
+              minor = 5,
+              revision = 0
             }
           },
           {
@@ -54,6 +55,14 @@ INFO = function()
               minor = 1,
               revision = 1
             }
+          },
+          {
+            modulename = 'esi-schema',
+            version = {
+              major = 0,
+              minor = 1,
+              revision = 1
+            }
           }
         }
       },
@@ -62,7 +71,7 @@ INFO = function()
 
   config =
   {
-    empty = nil
+    emptyidentifier = nil
   },
 
   state =
@@ -71,10 +80,11 @@ INFO = function()
       holderobj = {},
       data = {},
       columns = {}, --columns[columnname] = true
-      insync = false,
-      columnswritten = false,
-      emptyinimage = false,
-      wasnewcreated = false
+      insync = false, --means that the holders table and the table inside this object are potentially out of sync
+      schema = nil,
+      columnssynchronized = false, --means that a non-empty table was read and the columns were extracted
+      emptyinimage = false, --means that the table was empty on last reading from the holder
+      wasnewcreated = false, --means that the table was new created at the time of initialization
   },
 
   _isempty = function(self)
@@ -93,9 +103,13 @@ INFO = function()
     --returns an empty table even if there were columns initialized
     self.state.columns = {}
 
-    if not self.state.data or #(self.state.data)==0 then
+    if not self.state.data then
+      error("Unexpected error: .TableData property returned an empty lua table!")
+    end
+    if #(self.state.data)==0 then
       self.state.emptyinimage = true
-      self.state.data = {}
+      --self.state.data = {}
+      self.state.columnssynchronized = false
     else
       self.state.emptyinimage = false
       for i=1, #(self.state.data) do
@@ -103,6 +117,7 @@ INFO = function()
           self.state.columns[col] = true
         end
       end
+      self.state.columnssynchronized = true
     end
     self.state.insync = true
   end,
@@ -129,6 +144,148 @@ INFO = function()
   _syncifnecessary = function(self)
     if self.state.mode == "persistimmediately" then
       self:_synctoimage()
+    end
+  end,
+
+
+  
+
+
+  -- local schema =
+  -- {
+  --     columns = 
+  --     {
+  --         {
+  --             name = "columnname1",
+  --             required = true or false,
+  --             unique = true or false,
+  --             nonempty = true or false,
+  --             valueset = {"asd","sad", 1},
+  --             valueset = {discrete = {step = 0.5}} --?
+  --             valueset = {luatype="string"},
+  --             valueset = {range = {lower = 0, upper = 1}}
+  --         },
+  --         {
+  --             name = "columnname2",
+  --             required = true or false,
+  --             unique = true or false,
+  --             nonempty = true or false,
+  --             valueset = {"asd","sad", 1},
+  --             valueset = {discrete = {step = 0.5}} --ignored at first
+  --             valueset = {luatype="string"},
+  --             valueset = {range = {lower = 0, upper = 1}} --ignored at first
+  --         },
+  --     },
+  --     maxrows = 1000,
+  -- }
+
+  _validateinputschema = function(self, sc)
+    local s = self.SCHEMA
+
+    --maps from integer to string or number
+    local valset1 = s.Map(s.Integer, s.OneOf(s.String, s.Number))
+
+    --a table with field "luatype" with values "string" "boolean" or "number"
+    local valset2 = s.Record{
+      luatype = s.OneOf("string","boolean","number")
+    }
+    local valset = s.OneOf(valset1, valset2)
+
+    local colelement = s.Record {
+      name = s.String,
+      required = s.Boolean,
+      unique = s.Boolean,
+      nonempty = s.Boolean,
+      valueset = valset
+    }
+
+    local completeSchema = s.Record {
+      maxrows = s.PositiveNumber,
+      columns = s.Map(s.Integer, colelement) --
+    }
+
+    local given = sc --self.state.schema
+
+    local err = s.CheckSchema(given, completeSchema)
+
+    if err then
+      return nil, s.FormatOutput(err)
+    end
+    return true
+  end,
+
+
+  _setschema = function(self, schema)
+    self.state.schema = schema
+  end,
+
+
+  _schemacheck = function(self)
+    if not self.state.schema then return nil end
+
+  end,
+
+
+  SETSCHEMA = function(self, schema)
+    local ok, err = self:_validateinputschema(schema)
+    if not ok then
+      error("Error validating input schema: " .. err, 2)
+    end
+    self:_setschema(schema)
+  end,
+
+  --
+  VALIDATESCHEMA = function(self)
+    local data = self.state.data
+    local fails = {}
+    local schema = self.state.schema
+    if not schema then error("No schema was set!", 2) end
+
+    if schema.maxrows and self:ROWCOUNT() > schema.maxrows then 
+      table.insert(fails, "Maximum number of rows exceeded! Count " .. self:ROWCOUNT() .. ", maximum " .. schema.maxrows)
+    end
+
+    for _, col in pairs(schema.columns) do
+      --check required columns
+      if self:COLUMNEXISTS(col.name)==false and col.required then
+        table.insert(fails, "mandatory column " .. col.name .. " is missing")
+      end
+      --start to check the column
+      local seen = {}
+      for i=1, #(data) do
+        local val = data[i][col.name]
+        --check emptyness
+        if val==self.config.emptyidentifier and col.nonempty then
+          table.insert(fails, "empty value for " .. col.name .. " at index " .. i)
+        end
+        --check uniqueness
+        if seen[val] and col.unique then
+          table.insert(fails, "double value for column " .. col.name .. " at index " .. i)
+        else
+          seen[val] = true
+        end
+        --check type
+        if col.valueset then 
+          if col.valueset.luatype then --valueset = {luatype="string"},
+            if type(val) ~= col.valueset.luatype then
+              table.insert(fails, "invalid type for column " .. col.name .. " at index " .. i
+              ..", expected " .. tostring(col.valueset.luatype) .. ", got " .. type(val))
+            end
+          else --valueset {"asd","sad", 1},
+            local rev = {}
+            for k, v in pairs(col.valueset) do rev[v] = k end
+            if not rev[val] then --whats with nil values?
+              table.insert(fails, "invalid value for column " .. col.name .. " at index " .. i
+              ..", expected values" .. self.JSON.encode(col.valueset) .. ", got " .. tostring(val))
+            end
+          end
+        end
+      end
+    end
+    if #fails>0 then
+      return true
+    else
+      return nil, table.concat(fails, "\n")
     end
   end,
 
@@ -176,11 +333,11 @@ INFO = function()
  _addcolumn = function(self, colname)
   if not self.state.columns[colname] then
     self.state.columns[colname] = true
-    if self.config.empty == nil then return nil end
+    if self.config.emptyidentifier == nil then return nil end
     for i=1, #(self.state.data) do 
       --this does not do anything if data is empty
       --the columns are then added as soon as rows are added
-      self.state.data[i][colname] = self.config.empty
+      self.state.data[i][colname] = self.config.emptyidentifier
       self.state.insync = false
     end
   else
@@ -188,7 +345,7 @@ INFO = function()
   end
 end,
 
-removecolumn = function(self, colname)
+_removecolumn = function(self, colname)
   if self.state.columns[colname] then
     self.state.columns[colname] = nil
     self.state.insync = false
@@ -256,7 +413,7 @@ end,
     --this is only necessary if self.config.empty is not nil so that "empty" table cells have a default value
     for existingcolumn, _ in pairs(self.state.columns) do
       if not row[existingcolumn] then
-        row[existingcolumn] = self.config.empty
+        row[existingcolumn] = self.config.emptyidentifier
       end
     end
     table.insert(self.state.data, row)

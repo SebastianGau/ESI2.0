@@ -45,9 +45,9 @@ INFO = function()
         {
           modulename = 'dkjson',
           version = {
-            major = 0,
-            minor = 1,
-            revision = 1
+            major = 2,
+            minor = 5,
+            revision = 0
           }
         },
       }

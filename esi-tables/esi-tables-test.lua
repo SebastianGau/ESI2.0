@@ -35,7 +35,6 @@ if teststage==1 then
     do return "done" end
 end
 
-
 --UPDATE/SELECT A SINGLE ROW
 local updated = t:UPDATE
 { 
@@ -87,6 +86,64 @@ save()
 if teststage==5 then
     do return "cleared table" end
 end
+
+
+
+-----------------------------SCHEMA TEST
+local path = inmation.getself():parent():path()
+local mode = "persistoncommand"
+local name = "schematable"
+pcall(function() inmation.deleteobject(path .. "/" .. name) end)
+local t, existedbefore = tab:NEW{path = path, objectname = name, mode=mode}
+
+
+t:ADDCOLUMNS{"columnname1","columnname2","columnname3"}
+t:ADDROW{columnname1 = 1, columnname2 = "entry", columnname3 = false}
+t:ADDROW{columnname1 = 2, columnname2 = "entry1", columnname3 = true}
+t:ADDROW{columnname1 = 3, columnname2= "entry2", columnname3 = true}
+t:SAVE()
+
+---SET A SCHEMA
+local schema =
+{
+    columns = 
+    {
+        {
+            name = "columnname1",
+            required = true,
+            unique = true,
+            nonempty = true,
+            valueset = {1, 2, 3},
+        },
+        {
+            name = "columnname2",
+            required = true,
+            unique = true,
+            nonempty = true,
+            valueset = {luatype="string"},
+        },
+        {
+            name = "columnname3",
+            required = true,
+            unique = true,
+            nonempty = true,
+            valueset = {luatype="boolean"},
+        },
+    },
+    maxrows = 3,
+}
+
+t:SETSCHEMA(schema)
+
+res, err = t:VALIDATESCHEMA()
+if not res then
+    do return err end
+else
+    do return "passed" end
+end
+
+
+
 
 do return "passed all tests!"
 
