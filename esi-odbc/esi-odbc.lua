@@ -51,6 +51,7 @@ Useage
   driver = require "luasql.odbc",
   connection = nil,
   environment = nil,
+  json = require 'dkjson',
   name = "", --dsn
   user = "",
   password = "",

@@ -1,7 +1,7 @@
   bucket = require 'esi-bucket'
   -- bucket.readonlytable
   -- useage:
-  Directions = bucket.readonlytable {
+  Directions = bucket.READONLYTABLE {
     LEFT   = 1,
     RIGHT  = 2,
     UP     = 3,
@@ -18,8 +18,8 @@
   -- deep-copy a table (e.g. for oop object initialization)
   -- useage:
   b = {{a = 1, b = "2"},{d = 5}, { e = 7}}
-  c = bucket.deepcopy(b)
-  if c==b then
+  c = bucket.DEEPCOPY(b)
+  if c==b or b[1] == c[1] then
     error("The table reference should have changed by deep cloning!")
   end
 
@@ -33,18 +33,23 @@
     return x+triangle(x-1)
   end
 
-  pcall(print(triangle(40000))) -- stack overflow: too much recursion
-  triangle = bucket.memo(triangle) -- make triangle function memoized, so it "remembers" previous results
+  --local ok, err = pcall(function() triangle(40000) end) -- stack overflow: too much recursion (failing number depends on execution environment)
+  --if ok then error("This should have failed!") end
+  triangle = bucket.MEMO(triangle) -- make triangle function memoized, so it "remembers" previous results
   -- seed triangle's cache
   for i=0, 40000 do 
     triangle(i)
   end 
-  print(triangle(40000)) -- 800020000, instantaneous result
+local b = triangle(40000) -- 800020000, instantaneous result
 
 
 
   --bucket.AutomagicTable()
   --can be used to init a.b.c.d automatically
-  a = bucket.AutomagicTable()
+  a = bucket.AUTOMAGICTABLE()
   a.b.c.d = "a.b and a.b.c are automatically created"
+  local json = require 'dkjson'
+  do return json.encode(a) end
+
+  return "passed"
 
