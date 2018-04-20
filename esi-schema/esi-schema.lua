@@ -39,7 +39,7 @@ end
 
 function schema.FormatOutput(output)
     local format = schema.List()
-    for k,v in ipairs(output) do
+    for _,v in ipairs(output) do
         format:append(v:format())
     end
     return table.concat(format, "\n")

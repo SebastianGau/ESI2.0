@@ -29,7 +29,7 @@ local t1 = tab:NEW{path = path .. "/testtable", mode="persistoncommand"}
 
 ### SAVE
 
-Persists the changes to the table holder. Is unnecessary if mode == "persistoncommand". Note that mode == "persistimmediately" results in a significant performance loss. You should try to work in-memory as far as possible and persist by using the :SAVE() command afterwards.
+Persists the changes to the table holder. Is unnecessary if mode == "persistimmediately". Note that mode == "persistimmediately" results in a significant performance loss. You should try to work in-memory ("persistoncommand") as far as possible and persist by using the :SAVE() command afterwards.
 
 ```lua
 t:SAVE()
@@ -109,9 +109,17 @@ end
 
 Self-explanatory.
 
+```lua
+local count = t:ROWCOUNT()
+```
+
 ### COLUMNCOUNT
 
 Self-explanatory.
+
+```lua
+local count = t:COLUMNCOUNT()
+```
 
 ### SETSCHEMA / VALIDATESCHEMA
 
