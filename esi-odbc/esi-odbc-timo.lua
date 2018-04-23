@@ -1,24 +1,26 @@
 -- esi-odbc
+local BUCKET = require 'esi-bucket'
 
 -- Scope: The collection of statistical information about ODBC calls in this library
 local _ODBCStatistics={
-    data = {},
+    data = {}, --a field for accumulating  statistical information about a odbc connection
 
     _prec = function(self, num, prec)
         prec=prec or 2
         return tonumber(string.format(string.format("%%.%df",prec),num))
     end,
 
+    --the first time this function is called,
     _take = function(self, name, stats)
         if not self.data then
-            self.data={}
-            self.data.START=inmation.currenttime()
-            self.data.STARTLOCAL=inmation.gettime(inmation.currenttime(true)):gsub("Z","")
-            self.data.CALLS=0
-            self.data.PERFORMANCE={UOM="MB/sec"}
-            self.data.QUERIES={}
-            self.data.EXECUTES={}
-            self.data.RECENT={}
+            self.data = {}
+            self.data.START = inmation.currenttime()
+            self.data.STARTLOCAL = inmation.gettime(inmation.currenttime(true)):gsub("Z","")
+            self.data.CALLS = 0
+            self.data.PERFORMANCE = {UOM="MB/sec"}
+            self.data.QUERIES = {}
+            self.data.EXECUTES = {}
+            self.data.RECENT = {}
         end
         self.data.CALLS=self.data.CALLS+1
         --if 1<self.data.CALLS then
@@ -31,13 +33,13 @@ local _ODBCStatistics={
             self.data.RECENT.DATA=stats
             if stats.QUERY then
                 -- performance is updated for error-free calls
-                self.data.PERFORMANCE.READ=self.data.PERFORMANCE.READ or {START=self.data.RECENT.END,END=self.data.RECENT.END,MB=0,CALLS=0,MIN=0,MAX=0,AVG=0}
+                self.data.PERFORMANCE.READ = self.data.PERFORMANCE.READ or {START=self.data.RECENT.END,END=self.data.RECENT.END,MB=0,CALLS=0,MIN=0,MAX=0,AVG=0}
                 if not stats.QUERY.ERROR then
                     -- two digits precision is enough
                     self.data.PERFORMANCE.READ.MB=self:_prec(self.data.PERFORMANCE.READ.MB+stats.QUERY.BYTES/(1024*1024))
                     local tput=self:_prec(stats.QUERY.BYTES/(stats.QUERY.MS/1000)/(1024*1024))
                     self.data.PERFORMANCE.READ.CALLS=self.data.PERFORMANCE.READ.CALLS+1
-                    if 1==self.data.PERFORMANCE.READ.CNT then
+                    if self.data.PERFORMANCE.READ.CNT == 1 then
                         self.data.PERFORMANCE.READ.MIN=tput
                         self.data.PERFORMANCE.READ.MAX=tput
                         self.data.PERFORMANCE.READ.AVG=tput
@@ -70,6 +72,12 @@ local _ODBCStatistics={
 -- Class: a database Connection
 local _ODBCConnection={}
 _ODBCConnection.autoclose = nil
+_ODBCConnection.state = nil --stores the STATUS 
+_ODBCConnection.opentime = 0 --how long it took to open to connection the last time
+_ODBCConnection.con = nil --connection is open if this is not nil
+_ODBCConnection.env = nil
+_ODBCConnection.cursor = nil
+_ODBCConnection.queryerror = nil
 
 _ODBCConnection.STATUS=
 {
@@ -129,9 +137,9 @@ function _ODBCConnection:_breakodbcerror(s)
     local e=s
     local t=self:_splitstring(s,']')
     if #t==4 then
-        self.INFOS.VENDORNAME = '<unknown>' or t[1]:gsub('%[','') --Microsoft
-        self.INFOS.DRIVERNAME = '<unknown>' or t[2]:gsub('%[','') --ODBC SQL Server Driver
-        self.INFOS.PRODUCTNAME = '<unknown>' or t[3]:gsub('%[','') --SQL Server
+        self.INFOS.VENDORNAME = self.INFOS.VENDORNAME or t[1]:gsub('%[','') --Microsoft
+        self.INFOS.DRIVERNAME = self.INFOS.DRIVERNAME or t[2]:gsub('%[','') --ODBC SQL Server Driver
+        self.INFOS.PRODUCTNAME = self.INFOS.PRODUCTNAME or t[3]:gsub('%[','') --SQL Server
         e=t[4]
     end
     return e
@@ -167,18 +175,16 @@ function _ODBCConnection:_splitodbcerror(e)
 end
 
 -- opens the connection
-function _ODBCConnection:_open(setvendor)
+function _ODBCConnection:_open()
     local ms=inmation.currenttime()
-    self.env=self.driver:odbc()
+    self.env = self.driver:odbc()
     self.con,self.openerror=self.env:connect(self.dsn,self.user,self.pwd)
     if self.con then
         self.opentime=inmation.currenttime()-ms
         self.state=self.STATUS.OPEN
-        if setvendor then 
-            self:_getvendorinfo() 
-        end
+        self:_getvendorinfo() --could be made optional
     else
-        o.lerr=o.lerr or self.openerror
+        o.lerr = o.lerr or self.openerror
     end
 end
 
@@ -197,16 +203,17 @@ function _ODBCConnection:_close()
 end
 
 -- fetches all records and returns a table
+-- transforms an sql query returning a cursor to a lua table
 function _ODBCConnection:_query2table(sql)
     local r={}
     r.STATISTICS={}
     r.STATISTICS.CONNECTION={
-        OPEN=nil~=self.con,
-        VENDOR=self.vendorname or '<unknown>',
-        DRIVER=self.drivername or '<unknown>',
-        PRODUCT=self.productname or '<unknown>',
-        MS=self.opentime,
-        ERROR=self:_utf8(tostring(self.openerror)):gsub("nil","")
+        OPEN = nil ~= self.con,
+        VENDOR = self.INFOS.VENDORNAME,
+        DRIVER = self.INFOS.DRIVERNAME,
+        PRODUCT = self.INFOS.PRODUCTNAME,
+        MS = self.opentime,
+        ERROR = self:_utf8(tostring(self.openerror)):gsub("nil","")
     }
     r.STATISTICS.QUERY={SQL=sql}
     r.STATISTICS.COLUMNS={}
@@ -214,13 +221,13 @@ function _ODBCConnection:_query2table(sql)
     if self.con then
         local ms=inmation.currenttime()
         -- run the query
-        self.cursor,self.queryerror=self.con:execute(sql)
+        self.cursor , self.queryerror=self.con:execute(sql)
         if "string"==type(self.queryerror) and 0<#self.queryerror then
             r.STATISTICS.QUERY.ERROR={NATIVE=self:_utf8(tostring(self.queryerror)):gsub("nil","")}
-            local errt=self:_splitstring(r.STATISTICS.QUERY.ERROR.NATIVE)
-            r.STATISTICS.QUERY.ERROR.LIST={}
+            local errt = self:_splitstring(r.STATISTICS.QUERY.ERROR.NATIVE)
+            r.STATISTICS.QUERY.ERROR.LIST = {}
             for n=1,#errt do
-                table.insert(r.STATISTICS.QUERY.ERROR.LIST,self:_breakodbcerror(errt[n]))
+                table.insert(r.STATISTICS.QUERY.ERROR.LIST, self:_breakodbcerror(errt[n]))
             end
         end
         local recs=0
@@ -448,7 +455,7 @@ function lib:QUERYDATA(conn, sql)
     local actconn, err=self:_getconnection(conn,sql)
     -- connection functional?
     if actconn and actconn.state == _ODBCConnection.STATUS.OPEN then
-        local ret=actconn:_query2table(sql)
+        local ret = actconn:_query2table(sql)
         _ODBCStatistics:_take(actconn.name, ret.STATISTICS) --saves statistics of the query
         -- save the connection, if it is not autoclosing
         if not actconn.autoclose then
@@ -461,8 +468,8 @@ function lib:QUERYDATA(conn, sql)
 end
 
 -- executes a single or multiple SQL commands
---argument conn: mandatory
---argument sql: mandatory
+-- argument conn: mandatory
+-- argument sql: mandatory
 function lib:EXECUTE(conn,sql)
     local actconn=self:_getconnection(conn,sql)
     -- connection functional?
