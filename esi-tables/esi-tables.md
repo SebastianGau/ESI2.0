@@ -177,7 +177,7 @@ local schema =
             name = "columnname1",
             required = true, --the column is mandatory
             unique = true, --the column has to feature unique values
-            nonempty = true, --all values in the column have to be nonemoty
+            nonempty = true, --all values in the column have to be nonempty
             valueset = {1, 2, 3}, --means that the values in the table have to be either 1, 2 or 3
         },
         {
