@@ -21,12 +21,13 @@ Returns a connection to an ODBC Source.
 Useage
 
 ```lua
-    local data = 
-  {
+local db = require 'esi-odbc'
+local data = 
+{
     ["dsn"] = "asd",
     ["user"] = "asd",
     ["password"] = "asd"
-  }
+}
 
 local autoclose = false
 --if no Name is provided, the connection will automatically be set to Autoclose
@@ -43,6 +44,11 @@ local dbobj = db:GETCONNECTION
     --also db.MODE.COLNAMEINDEX: determines whether the EXECUTE operatur rows 
     --as a lua table whose keys are numbers (0) or the column names (1)
 }
+
+--this is also possible if a "Name" is passed in the GETCONNECTION argument table
+dbobj = db:GETCONNECTION{Name = "vkpi1"}:EXECUTE("USE visualkpi")
+-- declarative syntax for high-level ESI Code also works:
+dbobj = db:GETCONNECTION("vkpi1"):EXECUTE("USE visualkpi")
 ```
 
 ### CONNECT

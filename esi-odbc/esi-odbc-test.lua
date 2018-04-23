@@ -1,6 +1,5 @@
 local db = require 'esi-odbc'
 local json = require 'dkjson'
-local old = require 'BASF.database.odbc'
 
 
 
