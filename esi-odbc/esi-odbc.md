@@ -41,7 +41,7 @@ local dbobj = db:GETCONNECTION
     Maxrecords = 100000, --maximum number of records to be fetched in one call, has standard value 10000
     Autoclose = autoclose, --whether the connection is opened and closed on demand when executing a query, by default false
     Itermode = db.MODE.NUMBERINDEX 
-    --also db.MODE.COLNAMEINDEX: determines whether the EXECUTE operatur rows 
+    --also db.MODE.COLNAMEINDEX: determines whether the EXECUTE operatur returns rows 
     --as a lua table whose keys are numbers (0) or the column names (1)
 }
 
