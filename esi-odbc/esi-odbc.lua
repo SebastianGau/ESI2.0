@@ -210,7 +210,7 @@ function _ODBCConnection:_initvendorinfo()
             self.INFOS.DRIVERNAME = driver or  self.INFOS.DRIVERNAME--ODBC SQL Server Driver
             self.INFOS.PRODUCTNAME = product or  self.INFOS.PRODUCTNAME--SQL Server
             self.INFOS.INIT = true
-        end
+        end  
     end
 end
 
