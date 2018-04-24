@@ -1,92 +1,93 @@
 -- esi-odbc
 local BUCKET = require 'esi-bucket'
-local json = require 'dkjson'
+local JSON = require 'dkjson'
 
 -- Scope: The collection of statistical information about ODBC calls in this library
-local _ODBCStatistics={
-    data = nil, --a field for accumulating  statistical information about an odbc connection
+local _ODBCStatistics = {}
+_ODBCStatistics.data = nil --a field for accumulating  statistical information about an odbc connection
 
-    _prec = function(self, num, prec)
-        prec = prec or 2
-        return tonumber(string.format(string.format("%%.%df",prec),num))
-    end,
+function     _ODBCStatistics:_prec(num, prec)
+    prec = prec or 2
+    return tonumber(string.format(string.format("%%.%df",prec),num))
+end
 
-    _new = function(self, o)
-        --without the deepcopy(self) here, all table field of the object point to the same table
-        o = o or BUCKET.DEEPCOPY(self) 
-        self.__index = self
-        setmetatable(o, self)
+function _ODBCStatistics:_new(o)
+    --without the deepcopy(self) here, all table field of the object point to the same table
+    o = o or BUCKET.DEEPCOPY(self) 
+    self.__index = self
+    setmetatable(o, self)
 
-        o.data = 
+    o.data = 
+    {
+        INITTIME = inmation.currenttime(),
+        INITTIMELOCAL = inmation.gettime(inmation.currenttime(true)):gsub("Z",""),
+        CALLS = 0,
+        PERFORMANCE =
         {
-            INITTIME = inmation.currenttime(),
-            INITTIMELOCAL = inmation.gettime(inmation.currenttime(true)):gsub("Z",""),
-            CALLS = 0,
-            PERFORMANCE = 
+            READ =
             {
-                READ =
-                {
-                    OVERALLMB = 0,
-                    OVERALLRECORDS = 0,
-                    MIN = 0,
-                    MAX = 0,
-                    AVG = 0,
-                    CALLS = 0,
-                    UOM = "MB/s"
-                },
-                WRITE =
-                {
-                    OVERALLRECORDS = 0,
-                    CALLS = 0, 
-                    AVGTIMEPEREXECUTE_MS = 0,
-                }
+                OVERALLMB = 0,
+                OVERALLRECORDS = 0,
+                MIN = 0,
+                MAX = 0,
+                AVG = 0,
+                CALLS = 0,
+                UOM = "MB/s"
             },
-            RECENT = {}
-        }
-        return o
-    end,
+            WRITE =
+            {
+                OVERALLRECORDS = 0,
+                CALLS = 0,
+                AVGTIMEPEREXECUTE_MS = 0,
+            }
+        },
+        RECENT = {}
+    }
+    return o
+end
     
-    --merge the statistics given query with those of the past queries
-    _mergestatistics = function(self, stats)
-        self.data.CALLS = self.data.CALLS + 1
-        if stats and type(stats)=='table' then
-            self.data.RECENT = stats
-            if stats.QUERY then
-                self.data.PERFORMANCE.READ.CALLS = self.data.PERFORMANCE.READ.CALLS + 1
-                self.data.PERFORMANCE.READ.OVERALLMB = self.data.PERFORMANCE.READ.OVERALLMB + stats.QUERY.BYTECOUNT/(1024*1024)
-                self.data.PERFORMANCE.READ.OVERALLRECORDS = self.data.PERFORMANCE.READ.OVERALLRECORDS + stats.QUERY.RECORDCOUNT
-                local tput = stats.QUERY.BYTEPERSECOND/(1024*1024)
-                
-                if self.data.PERFORMANCE.READ.CALLS == 1 then
-                    self.data.PERFORMANCE.READ.MIN = tput
-                    self.data.PERFORMANCE.READ.MAX = tput
-                    self.data.PERFORMANCE.READ.AVG = tput
-                else
-                    if tput < self.data.PERFORMANCE.READ.MIN  then self.data.PERFORMANCE.READ.MIN = tput end
-                    if tput > self.data.PERFORMANCE.READ.MAX  then self.data.PERFORMANCE.READ.MAX = tput end
-                    -- rolling average is enough
-                    self.data.PERFORMANCE.READ.AVG = (self.data.PERFORMANCE.READ.AVG + tput)/2
-                end
-            elseif stats.EXECUTE then
-                if stats.EXECUTE.ROWS_AFFECTED > 0 then
-                    self.data.PERFORMANCE.WRITE.OVERALLRECORDS = self.data.PERFORMANCE.WRITE.OVERALLRECORDS + stats.EXECUTE.ROWS_AFFECTED
-                end
-                self.data.PERFORMANCE.WRITE.CALLS = self.data.PERFORMANCE.WRITE.CALLS + 1
-                if self.data.PERFORMANCE.WRITE.CALLS == 1 then
-                    self.data.PERFORMANCE.WRITE.AVGTIMEPEREXECUTE_MS = stats.EXECUTE.TIME
-                else
-                    self.data.PERFORMANCE.WRITE.AVGTIMEPEREXECUTE_MS = (self.data.PERFORMANCE.WRITE.AVGTIMEPEREXECUTE_MS + stats.EXECUTE.TIME)/2
-                end
-            else
-                error("Invalid stats table passed! " .. json.encode(stats))
-            end
-        end
-    end,
+--merge the statistics given query with those of the past queries
+function _ODBCStatistics:_mergestatistics(stats)
+    self.data.CALLS = self.data.CALLS + 1
+    if stats and type(stats)=='table' then
+        self.data.RECENT = stats
+        if stats.QUERY then
+            self.data.PERFORMANCE.READ.CALLS = self.data.PERFORMANCE.READ.CALLS + 1
+            self.data.PERFORMANCE.READ.OVERALLMB = self.data.PERFORMANCE.READ.OVERALLMB + stats.QUERY.BYTECOUNT/(1024*1024)
+            self.data.PERFORMANCE.READ.OVERALLRECORDS = self.data.PERFORMANCE.READ.OVERALLRECORDS + stats.QUERY.RECORDCOUNT
+            local tput = stats.QUERY.BYTEPERSECOND/(1024*1024)
 
-    _get = function(self)
-        return BUCKET.DEEPCOPY(self.data)
+            if self.data.PERFORMANCE.READ.CALLS == 1 then
+                self.data.PERFORMANCE.READ.MIN = tput
+                self.data.PERFORMANCE.READ.MAX = tput
+                self.data.PERFORMANCE.READ.AVG = tput
+            else
+                if tput < self.data.PERFORMANCE.READ.MIN  then self.data.PERFORMANCE.READ.MIN = tput end
+                if tput > self.data.PERFORMANCE.READ.MAX  then self.data.PERFORMANCE.READ.MAX = tput end
+                -- rolling average is enough
+                self.data.PERFORMANCE.READ.AVG = (self.data.PERFORMANCE.READ.AVG + tput)/2
+            end
+        elseif stats.EXECUTE then
+            if stats.EXECUTE.ROWS_AFFECTED > 0 then
+                self.data.PERFORMANCE.WRITE.OVERALLRECORDS = self.data.PERFORMANCE.WRITE.OVERALLRECORDS + stats.EXECUTE.ROWS_AFFECTED
+            end
+            self.data.PERFORMANCE.WRITE.CALLS = self.data.PERFORMANCE.WRITE.CALLS + 1
+            if self.data.PERFORMANCE.WRITE.CALLS == 1 then
+                self.data.PERFORMANCE.WRITE.AVGTIMEPEREXECUTE_MS = stats.EXECUTE.TIME
+            else
+                self.data.PERFORMANCE.WRITE.AVGTIMEPEREXECUTE_MS = (self.data.PERFORMANCE.WRITE.AVGTIMEPEREXECUTE_MS + stats.EXECUTE.TIME)/2
+            end
+        else
+            error("Invalid stats table passed! " .. JSON.encode(stats))
+        end
     end
-}
+end
+
+
+function _ODBCStatististics:_get()
+    return BUCKET.DEEPCOPY(self.data)
+end
+
 
 
 -- Class: a database Connection
@@ -109,7 +110,7 @@ _ODBCConnection.STATE =
     UTF8 = true,
     CODEPAGE = 0,
     MAXRECORDS = 100000,
-    ITERMODE = 0, --or 1, 0: return records indexed by number as they appear in the query, 
+    ITERMODE = 0, --or 1, 0: return records indexed by number as they appear in the query
     --2: indexed by column name
     STATUS = 0,
     TIMETOOPEN = 0, --how long it took to open the connection
@@ -201,11 +202,11 @@ end
 function _ODBCConnection:_initvendorinfo()
     local sql = "SELECT * FROM __1very2unlikely3to4exist__"
     local match = "%[([^%[^%]]-)%]%[([^%[^%]]-)%]%[([^%[^%]]-)%]" 
-    local c, e = self.STATE.CONNECTION:execute(sql)    
+    local _, e = self.STATE.CONNECTION:execute(sql)    
     if e then
         --e = self:_utf8(tostring(e)):gsub("nil","")
         if type(e) == "string" and #e > 0  then
-            local a, b, vendor, driver, product = string.find(e, match)
+            local _, _, vendor, driver, product = string.find(e, match)
             self.INFOS.VENDORNAME = vendor or self.INFOS.VENDORNAME --Microsoft
             self.INFOS.DRIVERNAME = driver or  self.INFOS.DRIVERNAME--ODBC SQL Server Driver
             self.INFOS.PRODUCTNAME = product or  self.INFOS.PRODUCTNAME--SQL Server
@@ -215,8 +216,6 @@ function _ODBCConnection:_initvendorinfo()
 end
 
 
-
--- opens the connection
 function _ODBCConnection:CONNECT()
     if self.STATE.STATUS == self.STATUS.OPEN then
         return self
@@ -238,7 +237,7 @@ function _ODBCConnection:CONNECT()
     return self
 end
 
--- closes the connection
+
 function _ODBCConnection:CLOSE()
     if self.STATE.STATUS == self.STATUS.CLOSED then
         return nil
@@ -257,6 +256,7 @@ function _ODBCConnection:CLOSE()
     end
 end
 
+
 function _ODBCConnection:SETITERMODE(mode)
     if not mode then
         error("Invalid mode!", 2)
@@ -266,7 +266,7 @@ function _ODBCConnection:SETITERMODE(mode)
     end
 end
 
--- executes a table of SQL
+
 function _ODBCConnection:EXECUTE(query)
     if self.STATE.STATUS == self.STATUS.CLOSED and not self.STATE.AUTOCLOSE then
         error("Cannot execute: Connection is closed!", 2)
@@ -351,7 +351,7 @@ function _ODBCConnection:EXECUTE(query)
             end
 
             result = 3
-            
+
             r.STATISTICS.QUERY.RECORDCOUNT = records
             r.STATISTICS.QUERY.BYTECOUNT = bytes
             r.STATISTICS.QUERY.EXECUTIONTIMEMS = inmation.now() - starttime
@@ -372,7 +372,6 @@ function _ODBCConnection:EXECUTE(query)
     elseif result == 2 then
         return r.STATISTICS.EXECUTE.ROWS_AFFECTED, r.STATISTICS
     elseif result == 3 then
-        --error(json.encode(r))
         return r.DATA, r.STATISTICS
     end 
 end
@@ -394,7 +393,7 @@ end
 --input table args was typchecked by connection manager
 function _ODBCConnection:_new(args)
     local o = BUCKET.DEEPCOPY(self)
-    
+
     --it was made sure in the connection factory that these fields exist
     o.STATE.NAME = args.Name
     o.STATE.DSN = args.DSN
@@ -454,7 +453,6 @@ function lib.INFO()
                 name="Timo Klingenmeier",
                 company="inmation Software GmbH",
                 email="timo.klingenmeier@inmation.com",
-                
             },
             {
                 name="Sebastian Gau",
@@ -475,7 +473,7 @@ function lib.INFO()
                 },
                 {
                     modulename = 'esi-bucket',
-                    version = 
+                    version =
                     {
                         major = 0,
                         minor = 1,
@@ -522,7 +520,7 @@ function lib:GETCONNECTION(args)
 
     -- error checks
     if args.Name and type(args.Name)~="string" then
-        error("Invalid argument for Name: " .. type(args.Name), 2) 
+        error("Invalid argument for Name: " .. type(args.Name), 2)
     end
 
     --return object from the connection pool if one is availible
@@ -565,7 +563,7 @@ function lib:GETCONNECTION(args)
         utf8 = true, --to be cleared
         Codepage = 0, --to be cleared
         Maxrecords = args.Maxrecords,
-        Itermode = args.Itermode, 
+        Itermode = args.Itermode,
         Parent = self,
     }
 
