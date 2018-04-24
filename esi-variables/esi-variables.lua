@@ -1,32 +1,13 @@
 -- esi-variables
 local esivariables = -- note: local scope COMPULSORY here
 {
---[[@md 
-### INFO
-
-This is a mandatory function for every ESI library.
-
-Usage
-
-```lua
-    local JSON = require('dkjson')
-    local ESI = require('esi-example')
-    local result = ESI:INFO()
-    error(JSON.encode(result))
-```
-
-Example response
-
-```lua
-ommited for brevity
-```
-@md]]
+--@md 
   INFO = function()
     return {
       version = {
         major = 0,
         minor = 1,
-        revision = 1
+        revision = 2
       },
       contacts = {
         {
@@ -57,14 +38,6 @@ ommited for brevity
               minor = 1,
               revision = 1
             }
-          },
-          {
-            modulename = 'inmation.String',
-            version = {
-              major = 0,
-              minor = 1,
-              revision = 1
-            }
           }
         }
       }
@@ -73,20 +46,7 @@ ommited for brevity
 
   json = require'dkjson',
   O = require 'esi-objects',
-  strlib = require'inmation.String',
-
---[[@md 
-### SETVARIABLE
-
-Upserts a variable underneath the code-executing object and sets its value. Tables are automatically converted to json.
-
-```lua
-SETVARIABLE(path, v, q, t)
-SETVARIABLE({path ="aas", v=1.4, q=1,t=2348763284767})
-SETVARIABLE({path ="aas", v=1.4, q=1,t=2348763284767, json = {indent = true}})
-SETVARIABLE({object = obj, path ="aas", v=1.4, q=1,t=2348763284767, json = {indent = true}})
-```
-@md]]
+--@md 
 SETVARIABLE = function(self, ...)
   local J = self.json
   local ObjectParent, ObjectName = ""
@@ -156,24 +116,12 @@ SETVARIABLE = function(self, ...)
         [".ArchiveOptions.PersistencyMode"] = inmation.model.codes.PersistencyMode.PERSIST_PERIODICALLY,
       }
     }
-    self:createobject(variableprop)
+    self.O:UPSERTOBJECT(variableprop)
   end
   inmation.setvalue(selfpath .. "/" .. ObjectName, v, q, t)
   return true
 end,
-
-
---[[@md
-### GETVARIABLE
-
-Retrieves a variable value from underneath the code-executing object.
-
-```lua
-local v,q,t = O:GETVARIABLE(variablepath)
-local v,q,t = O:GETVARIABLE{ path ="aas"}
-local v,q,t = O:GETVARIABLE{object = obj, path ="aas"}
-```
-@md]]
+--@md
 GETVARIABLE = function(self, arg)
   local J = self.json
   local obj = inmation.getself()
