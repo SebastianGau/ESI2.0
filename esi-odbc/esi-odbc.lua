@@ -17,7 +17,7 @@ local _ODBCStatistics={
         self.__index = self
         setmetatable(o, self)
 
-        self.data = 
+        o.data = 
         {
             INITTIME = inmation.currenttime(),
             INITTIMELOCAL = inmation.gettime(inmation.currenttime(true)):gsub("Z",""),
@@ -101,7 +101,6 @@ _ODBCConnection.STATE =
     ENVIRONMENT = nil,
     CONNECTION = nil,
     CURSOR = nil,
-    OPENTIME = 0,
     NAME = nil,
     DSN = nil,
     USER = "",
@@ -113,18 +112,19 @@ _ODBCConnection.STATE =
     ITERMODE = 0, --or 1, 0: return records indexed by number as they appear in the query, 
     --2: indexed by column name
     STATUS = 0,
-    OPENTIME = 0
+    TIMETOOPEN = 0, --how long it took to open the connection
+    OVERALLOPENTIME = 0
 }
 
 _ODBCConnection.STATUS=
 {
-    SQLERR=-12,
-    DRIVERERR=-11,
-    NODRIVER=-2,
-    NODSN=-1,
-    NONE=0,
-    OPEN=1,
-    CLOSED=2,
+    SQLERR = -12,
+    DRIVERERR = -11,
+    NODRIVER =- 2,
+    NODSN = -1,
+    NONE = 0,
+    OPEN = 1,
+    CLOSED = 2,
 }
 
 
@@ -184,23 +184,6 @@ function _ODBCConnection:_breakodbcerror(s)
     return e
 end
 
--- tests the connection for vendor, driver, product
-function _ODBCConnection:_getvendorinfo()
-    self.INFOS.INIT = true
-    local sql="SELECT * FROM __1very2unlikely3to4exist__"
-    local c, e = self.con:execute(sql)    
-    if e then
-        e=self:_utf8(tostring(e)):gsub("nil","")
-        if "string"==type(e) and 0<#e then
-            local t=self:_splitstring(e)
-            for n=1,#t do
-                self:_breakodbcerror(t[n])
-                break
-            end
-        end
-    end
-end
-
 -- UTF-8 conversion assumed to happened already
 -- takes a  string and returns a table containing a structured error
 function _ODBCConnection:_splitodbcerror(e)
@@ -214,6 +197,25 @@ function _ODBCConnection:_splitodbcerror(e)
     return r
 end
 
+-- tests the connection for vendor, driver, product
+function _ODBCConnection:_initvendorinfo()
+    local sql = "SELECT * FROM __1very2unlikely3to4exist__"
+    local match = "%[([^%[^%]]-)%]%[([^%[^%]]-)%]%[([^%[^%]]-)%]" 
+    local c, e = self.STATE.CONNECTION:execute(sql)    
+    if e then
+        --e = self:_utf8(tostring(e)):gsub("nil","")
+        if type(e) == "string" and #e > 0  then
+            local a, b, vendor, driver, product = string.find(e, match)
+            self.INFOS.VENDORNAME = vendor or self.INFOS.VENDORNAME --Microsoft
+            self.INFOS.DRIVERNAME = driver or  self.INFOS.DRIVERNAME--ODBC SQL Server Driver
+            self.INFOS.PRODUCTNAME = product or  self.INFOS.PRODUCTNAME--SQL Server
+            self.INFOS.INIT = true
+        end
+    end
+end
+
+
+
 -- opens the connection
 function _ODBCConnection:CONNECT()
     if self.STATE.STATUS == self.STATUS.OPEN then
@@ -224,10 +226,10 @@ function _ODBCConnection:CONNECT()
     local error
     self.STATE.CONNECTION, error = self.STATE.ENVIRONMENT:connect(self.STATE.DSN, self.STATE.USER, self.STATE.PASSWORD)
     if self.STATE.CONNECTION then
-        self.STATE.OPENTIME = inmation.currenttime() - ms
+        self.STATE.TIMETOOPEN = inmation.currenttime() - ms
         self.STATE.STATUS = self.STATUS.OPEN
         if not self.INFOS.INIT then
-            --self:_getvendorinfo() --could be made optional
+            self:_initvendorinfo() --could be made optional
             self.INFOS.INIT = true
         end
     else
@@ -279,16 +281,17 @@ function _ODBCConnection:EXECUTE(query)
     end
 
     local r = {}
-    r.CONNECTION = BUCKET.DEEPCOPY(self.INFOS)
+    
     r.DATA = {}
     local starttime = inmation.currenttime()
     r.STATISTICS = {}
     r.STATISTICS.STARTTIME = inmation.now()
     r.STATISTICS.STARTTIMELOCAL = inmation.gettime(inmation.currenttime(true)):gsub("Z","")
-    
+    r.STATISTICS.CONNECTION = BUCKET.DEEPCOPY(self.INFOS)
+
     local result = 0
     local execerr 
-    self.STATE.CURSOR, execerr = self.STATE.CONNECTION:execute(query) --self:_ascii(query)
+    self.STATE.CURSOR, execerr = self.STATE.CONNECTION:execute(self:_ascii(query))
     if self.STATE.CURSOR == nil and "string" == type(execerr) and #execerr > 0 then
         error("Error executing query " .. query .. ", Error: " .. tostring(execerr), 2)
     elseif self.STATE.CURSOR == nil and "string" == type(execerr) and #execerr == 0 then
