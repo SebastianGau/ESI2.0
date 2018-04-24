@@ -46,9 +46,9 @@ local dbobj = db:GETCONNECTION
 }
 
 --this is also possible if a "Name" is passed in the GETCONNECTION argument table
-dbobj = db:GETCONNECTION{Name = "vkpi1"}:EXECUTE("USE visualkpi")
+local rowschanged = db:GETCONNECTION{Name = "vkpi1"}:EXECUTE("USE visualkpi")
 -- declarative syntax for high-level ESI Code also works:
-dbobj = db:GETCONNECTION("vkpi1"):EXECUTE("USE visualkpi")
+local rowschanged = db:GETCONNECTION("vkpi1"):EXECUTE("USE visualkpi")
 ```
 
 ### CONNECT

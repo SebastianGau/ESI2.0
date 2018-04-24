@@ -238,4 +238,47 @@ function bucket.AUTOMAGICTABLE()
   return CreateAutomagicTable()
 end
 
+function bucket.REVERSETABLE(tab)
+  if type(tab)~='table' then
+    error("Invalid argument type: " .. type(tab))
+  end
+  local rev = {}
+  for k, v in pairs(tab) do
+    rev[v] = k
+  end
+end
+
+function bucket.COUNT(tab)
+  if type(tab)~='table' then
+    error("Invalid argument type: " .. type(tab))
+  end
+  local c = 0
+  for k, v in pairs(tab) do
+    c = c + 1
+  end
+  return c
+end
+
+function bucket.EXTRACTKEYS(tab)
+  if type(tab)~='table' then
+    error("Invalid argument type: " .. type(tab))
+  end
+  local c = {}
+  for k, v in pairs(tab) do
+    table.insert(c, k)
+  end
+  return c
+end
+
+function bucket.EXTRACTVALUES(tab)
+  if type(tab)~='table' then
+    error("Invalid argument type: " .. type(tab))
+  end
+  local c = {}
+  for k, v in pairs(tab) do
+    table.insert(c, v)
+  end
+  return c
+end
+
 return bucket
