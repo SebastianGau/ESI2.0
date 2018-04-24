@@ -313,8 +313,8 @@ function _ODBCConnection:EXECUTE(query)
             r.STATISTICS.COLUMNS = {}
             r.STATISTICS.COLUMNS.NAMES = self.STATE.CURSOR:getcolnames()
             r.STATISTICS.COLUMNS.TYPES = self.STATE.CURSOR:getcoltypes()
+            
             local row = self.STATE.CURSOR:fetch({}, 'n')
-
             while row do
                 r.STATISTICS.ROWCOUNT = r.STATISTICS.ROWCOUNT + 1
                 local dat = {}
