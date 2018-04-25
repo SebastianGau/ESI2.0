@@ -60,7 +60,7 @@ VKPI:ADDWIDGETTODASHBOARD("TestDashboard", kpiobj, {howto = "KPITrend", width=2}
 --mapping options for inmation chart objects from the kpimodel
 VKPI:ADDWIDGETTODASHBOARD("TestDashboard", trendobj, {width=4})
 
---test invalid width
+--test invalid width 
 local ok, err = pcall(function() VKPI:ADDWIDGETTODASHBOARD("TestProfile", kpiobj, {howto = "KPIBlock", width = 3}) end)
 if ok then error("An error should have been raised!") end
 
