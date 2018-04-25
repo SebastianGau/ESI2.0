@@ -76,7 +76,7 @@ dbobj:EXECUTE("USE visualkpi")
 local q  = [[SELECT convert(nvarchar(50), ID) as ID, Name FROM VisualKPI.dbo.tableProfiles]]
 local profs1 = {}
 for rownum, row in pairs(dbobj:EXECUTE(q)) do
-    table.insert(profs1, {id = row[1], name = row[2]}) --db.MODE.NUMBERINDEX
+    table.insert(profs1, {ID = row[1], Name = row[2]}) --db.MODE.NUMBERINDEX
 end
 --set mode to index the rows by column names
 dbobj:SETITERMODE(db.MODE.COLNAMEINDEX)
@@ -109,36 +109,42 @@ local stats = dbobj:GETSTATISTICS()
 returned lua table as a json:
 
 ```json
-{
-    "RECENT": {
-        "ENDTIMELOCAL": "2018-04-23T12:10:46.338",
-        "STARTTIME": 1524478246336,
-        "ENDTIME": 1524478246338,
-        "EXECUTE": {
-            "TIME": 2,
-            "ROWS_AFFECTED": 0
-        },
-        "STARTTIMELOCAL": "2018-04-23T12:10:46.336"
-    },
-    "PERFORMANCE": {
-        "READ": {
-            "OVERALLMB": 0.00028800964355469,
-            "AVG": 0.096003214518229,
-            "OVERALLRECORDS": 18,
-            "UOM": "MB/s",
-            "MIN": 0.048001607259115,
-            "MAX": 0.14400482177734,
-            "CALLS": 2
-        },
-        "WRITE": {
-            "AVGTIMEPEREXECUTE_MS": 2.0,
-            "OVERALLRECORDS": -3,
-            "CALLS": 3
-        }
-    },
-    "INITTIME": 1524478246310,
-    "INITTIMELOCAL": "2018-04-23T12:10:46.310",
-    "CALLS": 5
+{  
+   "RECENT":{  
+      "ENDTIME":1524569929680,
+      "CONNECTION":{  
+         "VENDORNAME":"Microsoft",
+         "DRIVERNAME":"ODBC SQL Server Driver",
+         "PRODUCTNAME":"SQL Server",
+         "INIT":true
+      },
+      "STARTTIME":1524569929678,
+      "STARTTIMELOCAL":"2018-04-24T13:38:49.678",
+      "EXECUTE":{  
+         "ROWS_AFFECTED":-1,
+         "TIME":2
+      },
+      "ENDTIMELOCAL":"2018-04-24T13:38:49.680"
+   },
+   "PERFORMANCE":{  
+      "WRITE":{  
+         "OVERALLRECORDS":0,
+         "CALLS":4,
+         "AVGTIMEPEREXECUTE_MS":1.875
+      },
+      "READ":{  
+         "MIN":0.048001607259115,
+         "OVERALLMB":0.00028800964355469,
+         "MAX":0.14400482177734,
+         "UOM":"MB/s",
+         "CALLS":2,
+         "AVG":0.096003214518229,
+         "OVERALLRECORDS":18
+      }
+   },
+   "INITTIMELOCAL":"2018-04-24T13:38:49.649",
+   "INITTIME":1524569929649,
+   "CALLS":6
 }
 ```
 
