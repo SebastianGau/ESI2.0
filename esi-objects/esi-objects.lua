@@ -399,6 +399,7 @@ EXISTS = function(self, args)
       return true, o
     end
   end
+  if not args.object then return false end
   if args.object then
     local obj
     local ok, err = pcall(function() local obj = inmation.getobject(args.object:path()) end)
