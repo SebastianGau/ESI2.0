@@ -4,9 +4,10 @@ A library for handling of tables / table holders.
 
 ## Changes
 
-version | date | description
-------- | ---- | -----------
-1 | 2018-04-17 | Initial release
+| version | date       | description                                                  |
+| ------- | ---------- | ------------------------------------------------------------ |
+| 0.1.2   | 2018.05.02 | added the functions ENSURETEMPLATE and SETCONFIGURATIONTABLE |
+| 1       | 2018-04-17 | Initial release                                              |
 
 ## Available functions
 
@@ -226,6 +227,25 @@ if updated~=1 then error("Invalid update count!") end
 t:SAVE()
 local res, err = t:VALIDATESCHEMA()
 if res then error("This test should have failed!") end
+```
+
+### ENSURETEMPLATE
+
+Creates/Updates template.
+
+```lua
+O:ENSURETEMPLATE("Performance Counter Table", self.rootpath, "PERFORMANCECOUNTER", 'inmation.ESI.SystemMonitor.Defaults'["datapct"],  "typename", "ObjectAlias")
+ENSURETEMPLATE = function(self, objectname, parentpath, default, tablename, systemalias, objectalias)
+O:ENSURETEMPLATE{objectname="Performance Counter Table", parentpath=self.rootpath,default= require'inmation.ESI.SystemMonitor.Defaults'["PERFORMANCECOUNTER"], aliastree={"datapct",  "typename"}, objectalias="ObjectAlias"}
+```
+
+### SETCONFIGURATIONTABLE
+
+Sets the configuration table.
+
+```lua
+O:SETCONFIGURATIONTABLE{tablename="healthcalculationstemplate",aliastree={"typename","ObjectAlias"},TableData=list}
+setconfigurationtable = function(self, tablename, systemalias, objectalias, list)
 ```
 
 ## Breaking changes

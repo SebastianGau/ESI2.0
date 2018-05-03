@@ -12,7 +12,7 @@ INFO = function()
       version = {
         major = 0,
         minor = 1,
-        revision = 1
+        revision = 2
       },
       contacts = {
         {
@@ -583,6 +583,59 @@ end,
   self.state.insync = false
   self:_syncifnecessary()
  end
+
+  ENSURETEMPLATE = function(self, args)
+      args.parentpath = args.parentpath or inmation.getparentpath(inmation.getselfpath())
+      local exists, tableholder = self:EXISTS{ ["parentpath"] = args.parentpath, ["objectname"] = args.objectname }
+      if exists == false then
+          local tabledata = args.default
+          tableholder = self:UPSERTOBJECT{path = args.parentpath, class = "MODEL_CLASS_TABLEHOLDER", properties = {[".ObjectName"] = args.objectname,
+          --[".TableData"] = tabledata -- Todo after BugFix #000775
+          }}
+          tableholder.TableData = tabledata
+          tableholder:commit()
+      end
+      --self:SETCONFIGURATIONTABLE(args.tablename, args.aliastree, tableholder.TableData)
+      return self:SETCONFIGURATIONTABLE{table=args.table, aliastree=args.aliastree, TableData=tableholder.TableData}
+  end,
+
+  SETCONFIGURATIONTABLE = function(self, args)
+      local S = self.strlib
+      local data = args.table or {}
+      for	_,tdrow in pairs(args.TableData) do
+          local dataalias = data
+          for _,alias in ipairs(args.aliastree) do
+              if tdrow[alias] then
+                  dataalias[tdrow[alias]] = dataalias[tdrow[alias]] or {}
+                  dataalias = dataalias[tdrow[alias]]
+              end
+          end
+          if dataalias then
+              for kv,i in pairs(tdrow) do
+                  if self:VALUEINTABLE{table=args.aliastree, value=kv,where={v=true}} == false then
+                      if kv:sub(1,1) .. kv:sub(-1,-1) == "[]" then
+                          local kva = kv:sub(2,#kv -1)
+                          dataalias[kva] = dataalias[kva] or {}
+                          table.insert(dataalias[kva],i)
+                      else
+                          local bool1, bool2 = S.string2bool(i) --Todo change Lib
+                          -- check if boolean or numerian value. if not, write down as string
+                          if bool1 and bool2 then
+                              dataalias[kv] = true
+                          elseif not bool1 and bool2 then
+                              dataalias[kv] = false
+                          elseif tonumber(i) ~= nil then
+                              dataalias[kv] = tonumber(i)
+                          else
+                              dataalias[kv] = i
+                          end
+                      end
+                  end
+              end
+          end
+      end
+      return data
+  end,
 }
 return esitbllib
 
