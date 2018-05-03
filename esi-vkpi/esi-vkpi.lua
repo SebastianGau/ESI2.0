@@ -4,10 +4,7 @@ local BUCKET = require 'esi-bucket'
 local TAB = require 'esi-tables'
 local O = require 'esi-objects'
 
-
 --TODOS:
--- use esi-objects
--- use esi-bucket
 -- encapsulate config in a table using esi-tables
 
 
@@ -32,7 +29,7 @@ function GridPlacer:new(o)
     self.__index = self
     setmetatable(o, self)
     --table fields require this extra initialization
-    o.Placements = self:initPlacements() 
+    o.Placements = self:initPlacements()
     return o
 end
 
@@ -54,6 +51,17 @@ function GridPlacer:occupyCell(x, y)
     end
 end
 
+function GridPlacer:isAreaFree(rowstart, height, colstart, width)
+    for x = rowstart, (rowstart+height-1) do
+        for y = colstart, (colstart+width-1) do
+            if y > self.width or not self:isCellFree(x, y) then
+                return false
+            end
+        end
+    end
+    return true
+end
+
 function GridPlacer:occupyArea(rowstart, height, colstart, width)
     if not self:isAreaFree(rowstart, height, colstart, width) then
         error("The object cannot be placed here! rowstart, height, colstart, width: " .. rowstart .. " " .. height.. " " ..colstart.. " " ..width)
@@ -65,17 +73,6 @@ function GridPlacer:occupyArea(rowstart, height, colstart, width)
             --end
         end
     end
-end
-
-function GridPlacer:isAreaFree(rowstart, height, colstart, width)
-    for x=rowstart, (rowstart+height-1) do
-        for y=colstart, (colstart+width-1) do
-            if y > self.width or not self:isCellFree(x, y) then
-                return false
-            end
-        end
-    end
-    return true
 end
 
 function GridPlacer:findPlacementSpot(height, width)
@@ -92,7 +89,8 @@ function GridPlacer:findPlacementSpot(height, width)
     --returns rowstart, colstart, rowend, colend
 end
 
-function GridPlacer:placeObject(self, height, width)
+function GridPlacer:placeObject(height, width)
+    
     local rowstart, colstart = self:findPlacementSpot(height, width)
     self:occupyArea(rowstart, height, colstart, width)
     local rowend = rowstart + height - 1
@@ -415,22 +413,22 @@ end
 
 function SQLQueries:ClearDataBase()
     return
-    "DELETE FROM " .. self.dbname .. ".dbo.tableProfiles" ..
-    "DELETE FROM " .. self.dbname .. ".dbo.tableDashboards" ..
-    "DELETE FROM " .. self.dbname .. ".dbo.tableWidgets" ..
-    "DELETE FROM " .. self.dbname .. ".dbo.tableBookmarks" ..
+    "DELETE FROM " .. self.dbname .. ".dbo.tableProfiles\n" ..
+    "DELETE FROM " .. self.dbname .. ".dbo.tableDashboards\n" ..
+    "DELETE FROM " .. self.dbname .. ".dbo.tableWidgets\n" ..
+    "DELETE FROM " .. self.dbname .. ".dbo.tableBookmarks\n" ..
     "INSERT INTO " .. self.dbname .. ".dbo.tableProfiles " ..
     [[(ID, ProfileGroupID, DisplayOrder,
     Name, Description, Locked,
     Show, IsDefault)
     VALUES ('737234DD-8238-4F5B-B482-97FB36D10029', '444E6CC9-D1DC-4669-B54C-2E5FD7760249', NULL, 
     'Default', 'System Default Profile', 0,
-    1, 1)]] ..
+    1, 1) ]] ..
     "INSERT INTO " .. self.dbname .. ".dbo.tableDashboards " ..
     [[(ID, GroupID, ProfileID, 
     DisplayOrder, Name, Description,
     Locked, Show, IsDefault, 
-    StartTime, EndTime)
+    StartTime, EndTime) 
     VALUES ('D9925737-5DD7-474E-9B9D-BA307BD5A6A9', '7EE27D6E-A1CB-48CD-A073-2968AF67F477', '737234DD-8238-4F5B-B482-97FB36D10029',
     NULL, 'Default', 'System Default Dashboard', 
     0, 1, 1, 
@@ -438,25 +436,25 @@ function SQLQueries:ClearDataBase()
 end
 
 function SQLQueries:ProfileExists()
-    return "SELECT COUNT(Name)" ..
-    "FROM " .. self.dbname .. ".dbo.tableProfiles" ..
+    return "SELECT COUNT(Name) " ..
+    "FROM " .. self.dbname .. ".dbo.tableProfiles " ..
     "WHERE (Name = '%s')"
 end
 
 function SQLQueries:GetAllProfileNames()
-    return "SELECT convert(nvarchar(50), ID) as ID, Name" ..
+    return "SELECT convert(nvarchar(50), ID) as ID, Name " ..
     "FROM " .. self.dbname .. ".dbo.tableProfiles"
 end
 
 function SQLQueries:GetProfileID()
-    return [[SELECT convert(nvarchar(50), ID)]] ..
-    "FROM " .. self.dbname .. ".dbo.tableProfiles" ..
+    return [[SELECT convert(nvarchar(50), ID) ]] ..
+    "FROM " .. self.dbname .. ".dbo.tableProfiles " ..
     "WHERE (Name  = '%s')"
 end
 
 function SQLQueries:GetProfilesByDescription() 
-    return [[SELECT convert(nvarchar(50), ID) as ID, dbo.tableProfiles.Name]] .. 
-    "FROM " .. self.dbname .. ".dbo.tableProfiles" ..
+    return [[SELECT convert(nvarchar(50), ID) as ID, dbo.tableProfiles.Name ]] .. 
+    "FROM " .. self.dbname .. ".dbo.tableProfiles " ..
     "WHERE (Description  = '%s')"
 end
 
@@ -473,20 +471,20 @@ function SQLQueries:SetProfileDescription()
 end
 
 function SQLQueries:GetDashboardsInProfile()
-    return "SELECT convert(nvarchar(50), ID) as ID, Name" ..
-    "FROM " .. self.dbname .. ".dbo.tableDashboards" ..
+    return "SELECT convert(nvarchar(50), ID) as ID, Name " ..
+    "FROM " .. self.dbname .. ".dbo.tableDashboards " ..
     "WHERE (ProfileID = '%s')"
 end
 
 function SQLQueries:GetDashboardsByDescription()
-    return [[SELECT      convert(nvarchar(50), ID) as ID, Name]] .. 
-    "FROM " .. self.dbname .. ".dbo.tableDashboards" .. 
+    return [[SELECT      convert(nvarchar(50), ID) as ID, Name ]] .. 
+    "FROM " .. self.dbname .. ".dbo.tableDashboards " .. 
     [[WHERE (Description  LIKE '%%%s%%')]]
 end
 
 function SQLQueries:GetDashboardID()
-    return "SELECT    convert(nvarchar(50), ID) as ID" ..
-    "FROM " .. self.dbname .. ".dbo.tableDashboards" .. 
+    return "SELECT    convert(nvarchar(50), ID) as ID " ..
+    "FROM " .. self.dbname .. ".dbo.tableDashboards " .. 
     "WHERE Name = '%s'"
 end
 
@@ -507,13 +505,13 @@ function SQLQueries:DeleteDashboard()
 end
 
 function SQLQueries:GetContentChartID()
-    return "SELECT convert(nvarchar(50), ID) as ID" ..
-    "FROM " .. self.dbname ..".dbo.tableEmbeddedContents" ..
+    return "SELECT convert(nvarchar(50), ID) as ID " ..
+    "FROM " .. self.dbname ..".dbo.tableEmbeddedContents " ..
     "WHERE (Name = '%s')"
 end
 
 function SQLQueries:CreateEmbeddedContentChart()
-    return "EXECUTE " .. self.dbname ..".usp_SaveEmbeddedContent" .. 
+    return "EXECUTE " .. self.dbname ..".dbo.usp_SaveEmbeddedContent " .. 
     [[@id = '%s', 
     @name = '%s',
     @infoDisplayFormat = 0,
@@ -529,9 +527,9 @@ function SQLQueries:SetContentUrl()
 end
 
 function SQLQueries:EmbeddedContentChartExists()
-    return [[SELECT COUNT([Name])
-    FROM [dbo].[tableEmbeddedContents]
-    WHERE ([Name] = '%s')]]
+    return "SELECT COUNT(Name) " ..
+    "FROM " .. self.dbname .. ".dbo.tableEmbeddedContents " ..
+    "WHERE (Name = '%s')"
 end
 
 function SQLQueries:ClearAllBookmarks()
@@ -539,32 +537,26 @@ function SQLQueries:ClearAllBookmarks()
 end
 
 function SQLQueries:_addBookmark()
-    return "INSERT INTO " .. self.dbname .. ".dbo.tableBookmarks" .. 
+    return "INSERT INTO " .. self.dbname .. ".dbo.tableBookmarks " .. 
     [[(ID, ProfileID, Name, Description, DisplayOrder, Icon, ObjectID, URI) 
     VALUES ('%s', '%s', '%s', '', 0, 'tf-dashboard22', '%s', '%s')]]
 end
 
 function SQLQueries:BookmarkCount()
-    return "SELECT COUNT(NAME) FROM " .. self.dbname .. ".dbo.tableBookmarks".. 
-    [[WHERE (ProfileID = '%s')
-    AND (Name = '%s')
-    AND (ObjectID = '%s')]]
+    return "SELECT COUNT(NAME) FROM " .. self.dbname .. ".dbo.tableBookmarks "..
+    [[WHERE (ProfileID = '%s') AND (Name = '%s') AND (ObjectID = '%s')]]
 end
 
 function SQLQueries:InsertDashboardLinkBlock()
-    return "INSERT INTO " .. self.dbname .. ".dbo.tableDashboardLinkBlockWidgetOptions".. 
+    return "INSERT INTO " .. self.dbname .. ".dbo.tableDashboardLinkBlockWidgetOptions "..
     [[(ID, WidgetID, Icon, Color, DashboardID)
-    VALUES ('%s', 
-    '%s', 
-    'tf-dashboard22', 
-    '#ced5d7', 
-    '%s')]]
+    VALUES ('%s','%s', 'tf-dashboard22', '#ced5d7', '%s')]]
 end
 
 function SQLQueries:InsertWidget()
-    return "INSERT INTO " .. self.dbname .. ".tableWidgets" ..
-    [[(ID, DashboardID, RowStart, RowEnd , 
-    ColumnStart, ColumnEnd, ObjectType, ObjectID, WidgetType, MetaDescription, URI)
+    return "INSERT INTO " .. self.dbname .. ".dbo.tableWidgets " ..
+    [[(ID, DashboardID, RowStart, RowEnd, 
+    ColumnStart, ColumnEnd, ObjectType, ObjectID, WidgetType, MetaDescription, URI) 
     VALUES ('%s', '%s', %s, %s, %s, %s, %s,'%s', %s, '%s', %s)]]
 end
 
@@ -573,9 +565,8 @@ end
 --the esi-vkpi library
 local ADG =
 {
-    DB = require 'esi-odbc',
+    DB = nil,
     catLib = require "inmation.Catalog",
-    modLib = require "inmation.ObjectModelBASF",
     logswitch = false,
     modelsFoundInVKPI = {},
     GridPlacers = nil, --is initialized at database connection establishment
@@ -623,6 +614,7 @@ function ADG.INFO()
             dependencies = {
                 {
                     modulename = 'luasql.odbc',
+                    corelib = true,
                     version = 
                     {
                         major = 0,
@@ -666,7 +658,7 @@ end
 function ADG:CONNECTDATABASE(name)
     local ok, err = pcall(
         function()
-            self.db = ODBC:GETCONNECTION
+            self.DB = ODBC:GETCONNECTION
             {
                 Name = "vkpi",
                 DSN = self.ODBCConnectionData["dsn"], 
@@ -676,7 +668,7 @@ function ADG:CONNECTDATABASE(name)
                 Itermode = ODBC.MODE.NUMBERINDEX,
                 Autoclose = false
             }
-            self.db:CONNECT()
+            self.DB:CONNECT()
         end)
     if not ok then
         error("Could not open connection to VKPI Database: " .. tostring(err))
@@ -698,7 +690,7 @@ function ADG:SELECTDATABASE(databasename)
         error("unknown VKPI database: " .. databasename, 2)
     else
         self.CurrentlySelectedDatabase = databasename
-        self.SQLQueries:set(self.AvailibleDatabases[databasename])
+        self.SQLQueries:SetDBName(self.AvailibleDatabases[databasename])
     end
 
     local sql = 'USE ' .. self.AvailibleDatabases[databasename]
@@ -764,7 +756,7 @@ function ADG:_profileExists(ProfileName)
     end
     local sql = SQLQueries:ProfileExists():format(ProfileName)
     local count
-    for row in pairs(self.DB:EXECUTE(sql)) do
+    for _, row in pairs(self.DB:EXECUTE(sql)) do
         count = row[1]
     end
 
@@ -783,7 +775,7 @@ end
 function ADG:GETPROFILENAMES()
     local sql = SQLQueries:GetAllProfileNames()
     local profilenames ={}
-    for row in pairs(self.DB:EXECUTE(sql)) do --this query does perhaps not return any results!
+    for _, row in pairs(self.DB:EXECUTE(sql)) do --this query does perhaps not return any results!
         table.insert(profilenames, row[2])
     end
     return profilenames
@@ -794,7 +786,7 @@ end
 function ADG:_getProfileID(ProfileName)
     local sql = SQLQueries:GetProfileID():format(ProfileName)
     local id
-    for row in pairs(self.DB:EXECUTE(sql)) do
+    for _, row in pairs(self.DB:EXECUTE(sql)) do
         id = row[1]
     end
     return id
@@ -805,7 +797,7 @@ end
 function ADG:GETPROFILESBYDESCRIPTION(ProfileDescription)
     local sql = SQLQueries:GetProfilesByDescription():format(ProfileDescription)
     local profiles = {}
-    for row in pairs(self.DB:EXECUTE(sql)) do
+    for _, row in pairs(self.DB:EXECUTE(sql)) do
         table.insert(profiles, {id=row[1], name=row[2]})
     end
     return profiles
@@ -824,7 +816,7 @@ function ADG:DELETEPROFILE(ProfileName)
     end
 
     local id = self:_getProfileID(ProfileName)
-    local sql = SQLQueries:DeleteProfile():format(ProfileName)
+    local sql = SQLQueries:DeleteProfile():format(id)
     self.DB:EXECUTE(sql)
     return true
 end
@@ -869,7 +861,7 @@ function ADG:_getDashboardID(DashboardName)
     end
     local sql = SQLQueries:GetDashboardID():format(DashboardName)
     local id
-    for row in pairs(self.DB:EXECUTE(sql)) do
+    for _, row in pairs(self.DB:EXECUTE(sql)) do
         id = row[1]
     end
     return id
@@ -890,9 +882,9 @@ end
 --checked
 function ADG:GETDASHBOARDSINPROFILE(ProfileName)
     local id = self:_getProfileID(ProfileName)
-    local sql = SQLQueries:GetDashboardsByDescription():format(id)
+    local sql = SQLQueries:GetDashboardsInProfile():format(id)
     local dashboards = {}
-    for row in pairs(self.DB:EXECUTE(sql)) do
+    for _, row in pairs(self.DB:EXECUTE(sql)) do
         table.insert(dashboards, {id=row[1], name=row[2]})
     end
     return dashboards
@@ -901,7 +893,7 @@ end
 function ADG:GETDASHBOARDSBYDESCRIPTION(DashboardDescription)
     local sql = SQLQueries:GetDashboardsByDescription():format(DashboardDescription)
     local dashboards = {}
-    for row in pairs(self.DB:EXECUTE(sql)) do
+    for _, row in pairs(self.DB:EXECUTE(sql)) do
         table.insert(dashboards, row[2])
     end
     return dashboards
@@ -993,7 +985,7 @@ end
 function ADG:_getContentChartID(ContentName)
     local sql = SQLQueries:GetContentChartID():format(ContentName)
     --inmation.log(1, "getting content chart id, sql: " .. sql)
-    for row in pairs(self.DB:EXECUTE(sql)) do
+    for _, row in pairs(self.DB:EXECUTE(sql)) do
         id = row[1]
     end
     return id
@@ -1001,7 +993,7 @@ end
 
 function ADG:_createEmbeddedContentChart(ContentName, URL)
     local embeddedcontentid = self:_newID()
-    local sql = SQLQueries.CreateEmbeddedContentChart:format(embeddedcontentid, ContentName, URL, '-- Home --')
+    local sql = SQLQueries:CreateEmbeddedContentChart():format(embeddedcontentid, ContentName, URL, '-- Home --')
     --inmation.log(1, "chart is created, sql: " .. sql)
     self.DB:EXECUTE(sql)
 end
@@ -1019,7 +1011,7 @@ function ADG:_embeddedContentChartExists(ContentName)
     local sql = SQLQueries:EmbeddedContentChartExists():format(ContentName)
     local count
     --inmation.log(1, "checking existence, sql: " .. sql)
-    for row in pairs(self.DB:EXECUTE(sql)) do
+    for _, row in pairs(self.DB:EXECUTE(sql)) do
         count = row[1]
     end
     if count==1 then
@@ -1085,7 +1077,7 @@ function ADG:_bookmarkExists(TargetProfileName, BookmarkedDashboardName)
     local sql = SQLQueries:BookmarkCount():format(targetprofilid, BookmarkedDashboardName, bookmarkdbid)
 
     local count
-    for row in pairs(self.DB:EXECUTE(sql)) do
+    for _, row in pairs(self.DB:EXECUTE(sql)) do
         count = row[1]
     end
 
@@ -1207,10 +1199,21 @@ function ADG:ADDWIDGETTODASHBOARD(DashboardName, inmationobject, options, opts)
 
 
     if vkpiMappingData.ObjectID == nil or vkpiMappingData.ObjectID == "" then
-        error("The RCS has not assigned a VKPI ID to this object yet!")
+        error("The RCS has not assigned a VKPI ID to this object yet!", 2)
     end
     local widgetid = self:_newID()
-    local rowstart, rowend, columnstart, columnend = self.GridPlacers[dashboardid]:placeObject(vkpiMappingData.Height, vkpiMappingData.Width)
+
+    if asd == nil then
+        asd = 0
+    end
+    asd = asd + 1
+    local rowstart, rowend, columnstart, columnend
+    local ok, err = pcall(function()
+        rowstart, rowend, columnstart, columnend = self.GridPlacers[dashboardid]:placeObject(vkpiMappingData.Height, vkpiMappingData.Width)
+    end)
+    if not ok then
+        error("error " .. err .. asd, 2)
+    end
     local sql = SQLQueries:InsertWidget()--changed: widget id (ID here) added!
     if tostring(vkpiMappingData.URI)~='null' then
         vkpiMappingData.URI = "'" .. tostring(vkpiMappingData.URI) .. "'"
@@ -1232,7 +1235,7 @@ function ADG:ADDWIDGETTODASHBOARD(DashboardName, inmationobject, options, opts)
             self.DB:EXECUTE(sql)
         end)
     if not ok then
-        error("Error mapping object at path " .. inmationobject:path() .. ", exception: " .. err)
+        error("Error mapping object, exception: " .. err, 2)
     end
 
     --this has to happen after inserting the table widget!

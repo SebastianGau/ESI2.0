@@ -84,7 +84,7 @@ function _ODBCStatistics:_mergestatistics(stats)
 end
 
 
-function _ODBCStatististics:_get()
+function _ODBCStatistics:_get()
     return BUCKET.DEEPCOPY(self.data)
 end
 
@@ -295,8 +295,9 @@ function _ODBCConnection:EXECUTE(query)
     if self.STATE.CURSOR == nil and "string" == type(execerr) and #execerr > 0 then
         error("Error executing query " .. query .. ", Error: " .. tostring(execerr), 2)
     elseif self.STATE.CURSOR == nil and "string" == type(execerr) and #execerr == 0 then
-        --for execute querys which do not affect any rows 
-        --(e.g. a DELETE FROM... which does not delete anything)
+        r.STATISTICS.EXECUTE = {}
+        r.STATISTICS.EXECUTE.ROWS_AFFECTED = 0
+        r.STATISTICS.EXECUTE.TIME = inmation.now() - starttime
         result = 1
     elseif self.STATE.CURSOR then
         if type(self.STATE.CURSOR) == "number" then --sql execute

@@ -20,8 +20,6 @@ This is a mandatory function for every ESI library.
 
 ### ADG:DISCONNECTDATABASE()
 
-
-
 ### :SETDEFAULTPROFILE(ProfileName)
 
 ### :CLEARCURRENTDATABASE()
@@ -47,8 +45,6 @@ This is a mandatory function for every ESI library.
 ### :DELETEDASHBOARD(DashboardName)
 
 ### :SETDEFAULTDASHBOARD(DashboardName)
-
-### :GETDASHBOARDSBYDESCRIPTION(DashboardDescription)
 
 ### :ENSUREEMBEDDEDCONTENTCHART(ContentName, URL)
 

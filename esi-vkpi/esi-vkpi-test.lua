@@ -1,8 +1,12 @@
 local VKPI = require 'esi-vkpi'
+local JSON = require 'dkjson'
 
 VKPI:CONNECTDATABASE()
 VKPI:SELECTDATABASE("admin")
 
+VKPI:CLEARCURRENTDATABASE()
+
+VKPI:DELETEPROFILE("TestProfile")
 VKPI:ENSUREPROFILE("TestProfile")
 VKPI:ENSUREDASHBOARDINPARENTPROFILE("TestProfile", "TestDashboard")
 VKPI:CLEARDASHBOARD("TestDashboard")
@@ -17,13 +21,13 @@ local trendobj = inmation.getobject("/BASF/Predictive Maintenance/EMEA/Ludwigsha
 --works after next caching
 VKPI:ADDWIDGETTODASHBOARD("TestDashboard", "TestContentName", "http://www.google.com")
 
---add a dashboard link to the dashboard "TestDashboard" linking to the default dashboard
+--add a dashboard link to the dashboard "TestDashboard" linking to the "Default" dashboard
 --(TargetDashboardName, LinkedDashboardName, {width = 4, height = 8})
 VKPI:ADDWIDGETTODASHBOARD("TestDashboard", "Default");
 
 --add a dashboard link widget to the dashbord "default" pointing to the dashboard "TestDashboard"
 VKPI:CLEARDASHBOARD("Default")
-VKPI:ADDWIDGETTODASHBOARD("Default", "TestDashboard"); --does not work since default dashboard was n
+VKPI:ADDWIDGETTODASHBOARD("Default", "TestDashboard"); 
 
 --add a group block to the dashboard with name "TestDashboard"
 VKPI:ADDWIDGETTODASHBOARD("TestDashboard", groupobj, {howto = "GroupBlock", width = 1})
@@ -66,7 +70,7 @@ if ok then error("An error should have been raised!") end
 
 
 --test the homegroup
-self.ADG:ADDWIDGETTODASHBOARD("TestDashboard", inmation.getobject("/BASF"), {howto="GroupList", homegroup=true})
+VKPI:ADDWIDGETTODASHBOARD("TestDashboard", inmation.getobject("/BASF/Predictive Maintenance"), {howto="GroupList", homegroup=true})
 
 
 --test deleting etc
@@ -74,9 +78,10 @@ VKPI:ENSUREPROFILE("TestProfile2")
 VKPI:ENSUREDASHBOARDINPARENTPROFILE("TestProfile2", "TestDashboard2")
 local a = VKPI:GETDASHBOARDSINPROFILE("TestProfile2")
 if #a==0 then
-    error("")
+    local s = VKPI.DB:GETSTATISTICS()
+    error(JSON.encode(s))
 end
-if a[1].name~="TestDashboard2" then
+if a[1].name ~= "TestDashboard2" then
     error("dbs in testprofile 2: " .. table.concat(a, " "))
 end
 VKPI:DELETEPROFILE("TestProfile2")
@@ -85,5 +90,6 @@ if VKPI:_dashboardExists("TestDashboard2") then
 end
 
 VKPI:DISCONNECTDATABASE()
+
 
 do return "passed" end
