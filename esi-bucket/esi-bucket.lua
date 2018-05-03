@@ -281,10 +281,10 @@ function bucket.EXTRACTVALUES(tab)
   return c
 end
 
-function bucket.GETREFERENCE(self,tbl,tableParts)
+function bucket.GETREFERENCE(self, tbl, tableParts)
     local target = tbl
     if type(tbl) == "table" and type(tableParts) == "table" then
-        for _,v in ipairs(tableParts) do
+        for _, v in ipairs(tableParts) do
             target = target[v]
             if target == nil then
                 return nil
