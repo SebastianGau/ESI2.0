@@ -6,7 +6,7 @@ A library for managing ODBC-Connections in lua
 
 version | date | description
 ------- | ---- | -----------
-1 | 2018-04-16 | Initial release
+1 | 2018-05-03 | Initial release
 
 ## Available functions
 
@@ -14,11 +14,11 @@ version | date | description
 
 This is a mandatory function for every ESI library.
 
-### ADG:CONNECTDATABASE(name)
+### :CONNECTDATABASE(name)
 
-### ADG:SELECTDATABASE(databasename)
+### :SELECTDATABASE(databasename)
 
-### ADG:DISCONNECTDATABASE()
+### :DISCONNECTDATABASE()
 
 ### :SETDEFAULTPROFILE(ProfileName)
 
@@ -58,7 +58,8 @@ This is a mandatory function for every ESI library.
 
 ### :ADDWIDGETTODASHBOARD(DashboardName, inmationobject, options, opts)
 
-can also be used as ```lua 
+can also be used as 
+```lua 
 function(self, DashboardName, Contentname, ContentURL, {width = 4, height = 8})
 ```
 or
