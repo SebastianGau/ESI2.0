@@ -4,9 +4,10 @@ A collection of useful lua-hacks / tricks
 
 ## Changes
 
-version | date | description
-------- | ---- | -----------
-1 | 2018-17-04 | Initial release
+| version | date       | description                 |
+| ------- | ---------- | --------------------------- |
+| 0.1.1   | 2018-05-02 | GETREFERENCE function added |
+| 1       | 2018-17-04 | Initial release             |
 
 ## Available functions
 
@@ -105,6 +106,14 @@ Returns the number of key-value-pairs in an unordered lua table (the count opera
 ```lua
   a = bucket.COUNT{c = 1, d = 2}
   --a is 2
+```
+
+### GETREFERENCE
+
+iterates through the given tableParts (hierarchical order: last part is the one we want (is the most specific)). Returns the target, which is a reference to the last item from tableParts.
+
+```lua
+local target = bucket:GETREFERENCE({ ["t1"] = {["t2"] = "text"}},{[1] = "t1",[2] = "t2"})
 ```
 
 ## Breaking changes
