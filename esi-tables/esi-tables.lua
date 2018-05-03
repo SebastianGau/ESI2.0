@@ -10,7 +10,6 @@ local tbl =
     {
         emptyidentifier = nil
     },
-
     state =
     {
         mode = "persistoncommand", --or "persistimmediately"
@@ -233,14 +232,17 @@ function tbl:VALIDATESCHEMA()
             --check type
             if col.valueset then 
                 if col.valueset.luatype then --valueset = {luatype="string"},
-                    if type(val) ~= col.valueset.luatype then
+                    if tostring(col.valueset.luatype) == "number" and not tonumber(val) then
+                      table.insert(fails, "invalid type for column " .. col.name .. " at index " .. i
+                            ..", expected numbers, got " .. type(val) .. ", value: " .. tostring(val))
+                    elseif type(val) ~= col.valueset.luatype then
                         table.insert(fails, "invalid type for column " .. col.name .. " at index " .. i
                             ..", expected " .. tostring(col.valueset.luatype) .. ", got " .. type(val))
                     end
                 else --valueset {"asd","sad", 1},
                     local rev = {}
-                    for k, v in pairs(col.valueset) do rev[v] = k end
-                    if not rev[val] then --whats with nil values?
+                    for k, v in pairs(col.valueset) do rev[tostring(v)] = k end
+                    if not rev[tostring(val)] then --whats with nil values?
                         table.insert(fails, "invalid value for column " .. col.name .. " at index " .. i
                             ..", expected values" .. JSON.encode(col.valueset) .. ", got " .. tostring(val))
                     end
@@ -259,6 +261,7 @@ end
 
 
 function tbl:NEW(args)
+    
     if not args or type(args)~='table' then error("invalid arguments given: " .. tostring(args)) end
     if not args.path then error("missing path field in arguments table!") end
     local path, oname
@@ -280,6 +283,8 @@ function tbl:NEW(args)
     end
 
     local instance = {}
+    instance.state = H.DEEPCOPY(self.state)
+    instance.config = H.DEEPCOPY(self.config)
     self.__index = self
     instance = setmetatable(instance, self)
 
