@@ -122,6 +122,25 @@ Self-explanatory.
 local count = t:COLUMNCOUNT()
 ```
 
+### GETCOLUMN
+
+Returns only the data of a single row as an ordered (indexed by number) table.
+
+```lua
+local selected = t:GETCOLUMN
+{ 
+    NAME = "col3",
+    WHERE = {col4 = "wasupdated"} 
+}
+--alternatively:
+local selected = t:GETCOLUMN
+{ 
+    NAME = "col3",
+    WHERE = function(row) return row.col4 == "wasupdated" end 
+}
+[[selected has the structure {"valueforindex1","valueforindex2"}]]
+```
+
 ### SETSCHEMA / VALIDATESCHEMA
 
 Enables to check the table against given schemes.

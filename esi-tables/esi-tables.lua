@@ -232,12 +232,14 @@ function tbl:VALIDATESCHEMA()
             --check type
             if col.valueset then 
                 if col.valueset.luatype then --valueset = {luatype="string"},
-                    if tostring(col.valueset.luatype) == "number" and not tonumber(val) then
-                      table.insert(fails, "invalid type for column " .. col.name .. " at index " .. i
+                    if tostring(col.valueset.luatype) == "number" then
+                        if not tonumber(val) then
+                            table.insert(fails, "invalid type for column " .. col.name .. " at index " .. i
                             ..", expected numbers, got " .. type(val) .. ", value: " .. tostring(val))
+                        end
                     elseif type(val) ~= col.valueset.luatype then
                         table.insert(fails, "invalid type for column " .. col.name .. " at index " .. i
-                            ..", expected " .. tostring(col.valueset.luatype) .. ", got " .. type(val))
+                            ..", expected " .. tostring(col.valueset.luatype) .. ", got " .. type(val) .. ", value: " .. tostring(val))
                     end
                 else --valueset {"asd","sad", 1},
                     local rev = {}
@@ -541,7 +543,7 @@ end
 function tbl:SELECT(args)
     if not args or type(args)~='table' then error("invalid arguments given: " .. tostring(args), 2) end
     if not args.WHERE or (type(args.WHERE)~='table' and type(args.WHERE)~='function') then
-        error("Invalid WHERE argument!")
+        error("Invalid WHERE argument!", 2)
     end
 
     local ret = {}
@@ -551,6 +553,30 @@ function tbl:SELECT(args)
         end
     end
     return ret --attention: perhaps return a deep clone here
+end
+
+function tbl:GETCOLUMN(args)
+    if not args or type(args)~='table' then error("invalid arguments given: " .. tostring(args), 2) end
+    if not args.NAME or (type(args.NAME)~='string') then
+        error("Invalid NAME argument (column name): " .. type(args.Name), 2)
+    end
+
+    if not self:COLUMNEXISTS(args.Name) then
+        error("The column does not exist: " .. args.Name)
+    end
+
+    local ret = {}
+    local data
+    local ok, err = pcall(function()
+        data = self:SELECT{WHERE = args.WHERE}
+    end)
+    if not ok then
+        error("Error executing select: " .. err)
+    end
+    for k, row in pairs(data) do
+        table.insert(ret, row[args.Name])
+    end
+    return ret
 end
 
 function tbl:COLUMNS()
