@@ -138,7 +138,7 @@ local selected = t:GETCOLUMN
     NAME = "col3",
     WHERE = function(row) return row.col4 == "wasupdated" end 
 }
-[[selected has the structure {"valueforindex1","valueforindex2"}]]
+[[selected has the structure {"valueforindex1", "valueforindex2"}]]
 ```
 
 ### SETSCHEMA / VALIDATESCHEMA

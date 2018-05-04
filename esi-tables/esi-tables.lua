@@ -561,8 +561,8 @@ function tbl:GETCOLUMN(args)
         error("Invalid NAME argument (column name): " .. type(args.Name), 2)
     end
 
-    if not self:COLUMNEXISTS(args.Name) then
-        error("The column does not exist: " .. args.Name)
+    if not self:COLUMNEXISTS(args.NAME) then
+        error("The column does not exist: " .. args.NAME, 2)
     end
 
     local ret = {}
@@ -571,7 +571,7 @@ function tbl:GETCOLUMN(args)
         data = self:SELECT{WHERE = args.WHERE}
     end)
     if not ok then
-        error("Error executing select: " .. err)
+        error("Error executing select: " .. err, 2)
     end
     for k, row in pairs(data) do
         table.insert(ret, row[args.Name])
