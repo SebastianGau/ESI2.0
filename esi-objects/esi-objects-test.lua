@@ -1,6 +1,6 @@
 --<ObjectVersion>109</ObjectVersion>
-local O = require 'ESI.Objects'
-local json = require "json"
+local O = require 'esi-objects'
+local json = require "dkjson"
 
 local properties = 
 {
@@ -19,6 +19,7 @@ properties = properties})
 
 local exists, object = O:EXISTS{path=o:path()}
 local exists, object = O:EXISTS{parentpath=o:parent():path(), objectname=o.ObjectName}
+local exists, object = O:EXISTS{object=0}
 
 
 O:SETCUSTOM{object = o, key = "asd", value = "v"}
@@ -35,7 +36,8 @@ if vals[1]~="v1" or vals[2]~="v2"  then --check nilkeys
 end 
 --returns ordered table with the correspoding values
 
-local valid = O:VALIDINMATIONOBJECT(o)
+--validity is also checked with the EXISTS command
+local valid = O:EXISTS{object = o}
 if not valid then
     error("The object should be a valid inmation object!")
 end
@@ -72,7 +74,7 @@ local prop =
 }
 
 local o, changed = O:UPSERTOBJECT
-{path="/BASF/Predictive Maintenance Test/EMEA/Ludwigshafen/Technische Gase/NV6300/Machine", 
+{path="/BASF", 
     class = "MODEL_CLASS_CHART", 
     properties=prop}
 
