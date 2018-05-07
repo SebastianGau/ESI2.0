@@ -1,3 +1,4 @@
+-- esi-luaxp
 ------------------------------------------------------------------------
 -- LuaXP is a simple expression evaluator for Lua, based on lexp.js, a
 -- lightweight (math) expression parser for JavaScript by the same
@@ -25,10 +26,10 @@ function _M:INFO()
         },
         library = {
             -- Filename is always "lib-" .. modulename and the modulename must be used for the ScriptLibrary.LuaModuleName property.
-            modulename = "esi-io",
+            modulename = "esi-luaxp",
             dependencies = {
                 {
-                    
+
                 }
             }
         },
@@ -508,6 +509,16 @@ local nativeFuncs = {
     , ['if'] = { nargs = 2, impl = function( argv ) if argv[1] then return argv[2] or NULLATOM else return argv[3] or NULLATOM end end }
     , ['void'] = { nargs = 0, impl = function( argv ) return NULLATOM end }
 }
+
+function _M:ISOPERATOR(name)
+    if type(name) ~='string' then
+        error("Invalid or nil name argument supplied!")
+    end
+    if name == 'math' or nativeFuncs[name] then
+        return true
+    end
+end
+
 
 -- Adapted from "BitUtils", Lua-users wiki at http://lua-users.org/wiki/BitUtils; thank you kind stranger(s)...
 local bit = {}

@@ -111,6 +111,7 @@ _ODBCConnection.STATE =
     CODEPAGE = 0,
     MAXRECORDS = 100000,
     ITERMODE = 0, --or 1, 0: return records indexed by number as they appear in the query
+    DRIVERMODULE = "luasql.odbc",
     --2: indexed by column name
     STATUS = 0,
     TIMETOOPEN = 0, --how long it took to open the connection
@@ -221,9 +222,9 @@ function _ODBCConnection:CONNECT()
         return self
     end
     local ms = inmation.currenttime()
-    self.STATE.ENVIRONMENT = self.STATE.DRIVER:odbc()
-    local error
-    self.STATE.CONNECTION, error = self.STATE.ENVIRONMENT:connect(self.STATE.DSN, self.STATE.USER, self.STATE.PASSWORD)
+    --self.STATE.ENVIRONMENT = self.STATE.DRIVER:odbc()
+    local err
+    self.STATE.CONNECTION, err = self.STATE.ENVIRONMENT:connect(self.STATE.DSN, self.STATE.USER, self.STATE.PASSWORD)
     if self.STATE.CONNECTION then
         self.STATE.TIMETOOPEN = inmation.currenttime() - ms
         self.STATE.STATUS = self.STATUS.OPEN
@@ -407,9 +408,22 @@ function _ODBCConnection:_new(args)
     if args.Codepage then o.STATE.CODEPAGE = args.Codepage end
     if args.Maxrecords then o.STATE.MAXRECORDS = args.Maxrecords end
     if args.Itermode then o.STATE.ITERMODE = args.Itermode end
+    if args.Driver then o.STATE.DRIVERMODULE = args.Driver end
 
     --load driver (only once on connection creation)
-    o.STATE.DRIVER = require 'luasql.odbc'
+    local ok, err = pcall(function()
+        o.STATE.DRIVER = require(tostring(o.STATE.DRIVERMODULE))
+        if o.STATE.DRIVERMODULE == "luasql.odbc" then
+            self.STATE.ENVIRONMENT = self.STATE.DRIVER:odbc() 
+        elseif o.STATE.DRIVERMODULE == "luasql.oci8" then
+            self.STATE.ENVIRONMENT = self.STATE.DRIVER:oci8()
+        else
+            error("Unknown driver module!")
+        end
+    end)
+    if not ok then
+        error("Could not load driver " .. o.STATE.DRIVERMODULE, 3)
+    end
 
     --set connection status
     o.STATE.STATUS = self.STATUS.NONE
@@ -426,7 +440,12 @@ function _ODBCConnection:_new(args)
     local instance = setmetatable(o, self)
     
     if not self.STATE.AUTOCLOSE then
+        local o, e = pcall(function() 
         instance:CONNECT()
+        end)
+        if not ok then 
+            error("Could not establish connection: " .. e, 2)
+        end
     end
 
     return instance
@@ -548,6 +567,9 @@ function lib:GETCONNECTION(args)
     if args.Itermode and type(args.Itermode) ~= "number" then
         error("Invalid Itermode field provided in input table!", 2)
     end
+    if args.Driver and type(args.Driver) ~= "string" then
+        error("Invalid Driver provided in input table!", 2)
+    end
 
 
     --if mode is on autoclose, the connection will not be added to the connection pool
@@ -565,6 +587,7 @@ function lib:GETCONNECTION(args)
         Codepage = 0, --to be cleared
         Maxrecords = args.Maxrecords,
         Itermode = args.Itermode,
+        Driver = args.Driver,
         Parent = self,
     }
 

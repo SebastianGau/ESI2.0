@@ -9,7 +9,8 @@ mod._priority =
 {
   [".ChartType"] = 1, 
   [".ObjectName"] = 2,
-  [".ItemID"] = 3
+  [".ItemID"] = 3,
+  [".GenerationType"] = 4
 }
 
 function mod:INFO()
