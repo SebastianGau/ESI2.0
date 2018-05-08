@@ -46,7 +46,7 @@ function lib:ENSUREFOLDER(path, foldername, desc, custom)
     local o, changed, new
     local ok, err = pcall(function()
         o, changed, new = O:UPSERTOBJECT({path=path, 
-        class = "MODEL_CLASS_HOLDERITEM", 
+        class = "MODEL_CLASS_GENFOLDER", 
         properties = properties})
     end)
     if not ok then
