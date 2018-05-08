@@ -2,7 +2,6 @@
 local mod = {}
 local JSON = require 'dkjson'
 
-
 --properties deciding about subobject types or mandatory properties have to bet set first!
 --and can only be set at object creation
 mod._priority =
