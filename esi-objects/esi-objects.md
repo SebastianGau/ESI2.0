@@ -42,11 +42,11 @@ local prop =
 {
   [".ObjectName"] = "testchartname",
   [".ObjectDescription"] = "testdesc",
-  [".ChartType"] = 2, -- paretochart
+  [".ChartType"] = 	inmation.model.codes.SelectorChartType.CHART_PARETO,
   [".ParetoChart.KPIYAxisLabel"] = "Signal Contribution [%]", 
   [".ParetoChart.KPIXAxisLabel"] = "xlabel", 
   [".ParetoChart.KPIBarSettings.KPIBar"] = {h1:path(), h2:path()}, 
-  [".ParetoChart.KPIBarSettings.AggregateSelection"] = {40, 40}, 
+  [".ParetoChart.KPIBarSettings.AggregateSelection"] = {inmation.model.codes.Aggregates.AGG_TYPE_BESTFIT, inmation.model.codes.Aggregates.AGG_TYPE_BESTFIT}, 
   [".ParetoChart.KPIBarSettings.KPIBarName"] = {"test1", "test2"}, 
   [".ParetoChart.KPIBarSettings.KPIBarColor"] = {inmation.model.codes.KPIColors.RED, inmation.model.codes.KPIColors.RED}, 
   [".ParetoChart.KPIBarSettings.KPIBarOffset"] = {" ", " "},
@@ -58,9 +58,73 @@ local prop =
 }
 
 local o, changed = O:UPSERTOBJECT
-{path="/BASF/Predictive Maintenance Test/EMEA/Ludwigshafen/Technische Gase/NV6300/Machine", 
+{path="/BASF/Predictive Maintenance Test", 
     class = "MODEL_CLASS_CHART", 
     properties=prop}
+```
+
+
+```lua
+local properties =
+{
+  [".ObjectName"] = "testchartname1",
+  [".ObjectDescription"] = "testdesc",
+  [".ChartType"] = 	inmation.model.codes.SelectorChartType.CHART_TREND,
+  [".TrendChart.KPITrendScale"] = inmation.model.codes.KPITrendScale.SINGLESCALE,
+  [".TrendChart.TrendYAxis"] = inmation.model.codes.TrendYAxis.AUTOSCALE, --PENMINANDMAXYAXIS
+  [".TrendChart.KPIYAxisLabel"] = "°C",
+  [".TrendChart.KPIPenSettings.KPIPen"] = {h1:path(), h2:path()},
+  [".TrendChart.KPIPenSettings.AggregateSelection"] = {inmation.model.codes.Aggregates.AGG_TYPE_BESTFIT, inmation.model.codes.Aggregates.AGG_TYPE_BESTFIT},
+  [".TrendChart.KPIPenSettings.KPIPenOffset"] = {" ", " "},
+  [".TrendChart.KPIPenSettings.KPIPenColor"] = {inmation.model.codes.KPIColors.RED, inmation.model.codes.KPIColors.RED},
+  [".TrendChart.KPIPenSettings.KPIPenName"] = {"test1", "test2"},
+  [".TrendChart.KPIPenSettings.KPIPenMinYAxis"] = {0, 100},
+  [".TrendChart.KPIPenSettings.KPIPenMaxYAxis"] = {0, 100},
+  [".TrendChart.KPIPenSettings.KPIPenTrendType"] = {inmation.model.codes.KPIPenTrendType.INTERPOLATED, 	inmation.model.codes.KPIPenTrendType.INTERPOLATED}
+  Custom =
+  {
+    ["customkey"] = "customvalue",
+    ["customkey1"] = "customvalue1"
+  }
+}
+local o, changed = O:UPSERTOBJECT
+  {path="/BASF/Predictive Maintenance Test",
+  class = "MODEL_CLASS_CHART",
+  properties=prop}
+```
+
+```lua
+local properties =
+{
+  [".ObjectName"] = "testchartname1",
+  [".ObjectDescription"] = "testdesc",
+  [".ChartType"] = 	inmation.model.codes.SelectorChartType.CHART_XYPLOT,
+  [".XYPlotChart.KPIStartTime"] = "*-3d",
+  [".XYPlotChart.KPIEndTime"] = "*",
+  [".XYPlotChart.KPIXAxisLabel"] = "X",
+  [".XYPlotChart.KPIYAxisLabel"] = "Y",
+  [".XYPlotChart.KPIPlotYAxis"] = inmation.model.codes.TrendYAxis.AUTOSCALE,
+  [".XYPlotChart.KPIMinYAxis"] = 0,
+  [".XYPlotChart.KPIMaxYAxis"] = 10,
+  [".XYPlotChart.KPIXYPlotPenSettings.PenX"] = {h1:path()},
+  [".XYPlotChart.KPIXYPlotPenSettings.AggregateSelectionX"] = {inmation.model.codes.Aggregates.AGG_TYPE_BESTFIT},
+  [".XYPlotChart.KPIXYPlotPenSettings.PenY"] = {h1:path()},
+  [".XYPlotChart.KPIXYPlotPenSettings.AggregateSelectionY"] = {inmation.model.codes.Aggregates.AGG_TYPE_BESTFIT},
+  [".XYPlotChart.KPIXYPlotPenSettings.KPIPenColor"] = {inmation.model.codes.KPIColors.RED},
+  [".XYPlotChart.KPIXYPlotPenSettings.KPIPenName"] = {"testpen"},
+  [".XYPlotChart.KPIXYPlotPenSettings.PenIsTimeSeries"] = {true},
+  [".XYPlotChart.KPIXYPlotPenSettings.PenPlotContents"] =  {inmation.model.codes.KPIPlotContent.YDATA},
+  [".XYPlotChart.KPIXYPlotPenSettings.PenYDataLineType"] =	{inmation.model.codes.KPIDataLineType.SYMBOL}
+  Custom =
+  {
+    ["customkey"] = "customvalue",
+    ["customkey1"] = "customvalue1"
+  }
+}
+local o, changed = O:UPSERTOBJECT
+  {path="/BASF/Predictive Maintenance Test",
+  class = "MODEL_CLASS_CHART",
+  properties=prop}
 ```
 
 ### EXISTS
@@ -68,8 +132,8 @@ local o, changed = O:UPSERTOBJECT
 Checks existence of an object
 
 ```lua
-local exists, object = O:EXISTS{path=o:path()}
-local exists, object = O:EXISTS{parentpath=o:parent():path(), objectname=o.ObjectName}
+local exists, object = O:EXISTS{ path = o:path() } --path including objectname
+local exists, object = O:EXISTS{ parentpath = o:parent():path(), objectname=o.ObjectName }
 ```
 
 ### GETCUSTOM
@@ -78,7 +142,7 @@ Gets a custom property
 
 ```lua
 local val = O:GETCUSTOM{object=o, key="asd"} --returns nil if custom key does not exist
-local vals, nilkeys = O:GETCUSTOM{object=o, key={"asd1", "asd2"}}
+local vals, nilkeys = O:GETCUSTOM { object = o, key = {"asd1", "asd2"} }
 if vals[1]~="v1" or vals[2]~="v2"  then --check nilkeys
     error("invalid values: " .. tostring(vals[1]) .. " " .. tostring(vals[2]) .. " " .. tostring(table.concat(nilkeys)))
 end
