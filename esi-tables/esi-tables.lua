@@ -3,6 +3,7 @@ local H = require 'esi-bucket'
 local O = require 'esi-objects'
 local JSON = require 'dkjson'
 local SCHEMA = require 'esi-schema'
+local XP = require 'esi-luaxp'
 
 -- esi-tables
 local tbl =
@@ -158,7 +159,16 @@ function tbl:_validateinputschema(sc)
     local valset2 = s.Record{
         luatype = s.OneOf("string","boolean","number")
     }
-    local valset = s.OneOf(valset1, valset2)
+
+    local valset3 = s.Record{
+        mathexpression = s.Boolean
+    }
+
+    local valset4 = s.Record{
+        regex = s.String
+    }
+
+    local valset = s.OneOf(valset1, valset2, valset3, valset4)
 
     local colelement = s.Record {
         name = s.String,
@@ -232,7 +242,19 @@ function tbl:VALIDATESCHEMA()
             end
             --check type
             if col.valueset then 
-                if col.valueset.luatype then --valueset = {luatype="string"},
+                if col.valueset.mathexpression then
+                    local pr, message = XP.compile(tostring(val))
+                    if (pr == nil) then
+                        -- Parsing failed
+                        table.insert(fails, "invalid type for column " .. col.name .. " at index " .. i
+                            ..", parsing expression failed, reason: " .. message)
+                    end
+                elseif col.valueset.regex then
+                    if not val:match(col.valueset.regex) then
+                        table.insert(fails, "invalid value for column " .. col.name .. " at index " .. i
+                            ..", expected match to pattern " .. col.valueset.regex .. " , got value: " .. tostring(val))
+                    end
+                elseif col.valueset.luatype then --valueset = {luatype="string"},
                     if tostring(col.valueset.luatype) == "number" then
                         if not tonumber(val) then
                             table.insert(fails, "invalid type for column " .. col.name .. " at index " .. i
