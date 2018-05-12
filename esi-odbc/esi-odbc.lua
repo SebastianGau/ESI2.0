@@ -274,7 +274,7 @@ function _ODBCConnection:EXECUTE(query)
     end
 
     if type(query)~="string" or #query==0 then 
-        error("Invalid query " .. tostring(query) .. " provided of type " .. type(query))
+        error("Invalid query " .. tostring(query) .. " provided of type " .. type(query), 2)
     end
 
     if self.STATE.STATUS == self.STATUS.CLOSED and self.STATE.AUTOCLOSE then

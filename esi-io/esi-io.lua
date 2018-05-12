@@ -1,3 +1,4 @@
+-- esi-io
 local O = require 'esi-objects'
 
 local lib = {}
@@ -31,22 +32,40 @@ function lib:INFO()
     }
 end
 
-function lib:ENSUREFOLDER(path, foldername, desc, custom)
+function lib.getpath(path)
+    --detect relative path
+    if not path then
+        return inmation.getself():parent():path()
+    end
+    if tostring(path) and path == "" then
+        return inmation.getself():parent():path()
+    end
+    if tostring(path) and not path:find("System/Core") then
+        local p = inmation.getself():parent():path()
+        if tostring(path) and #path>0 then
+            return p .. "/" .. path
+        end
+    end
+    return path
+end
+
+function lib:ENSUREFOLDER(path, foldername, desc, additional)
     local properties =
     {
         [".ObjectName"] = foldername,
         [".ObjectDescription"] = desc,
-        Custom = custom
     }
-
-    if not path or path == "" or path == "cwd" then
-        path = inmation.getself():parent():path()
+    if additional then
+        for k, v in pairs(additional) do
+            properties[k] = v
+        end
     end
+    path = lib.getpath(path)
 
     local o, changed, new
     local ok, err = pcall(function()
-        o, changed, new = O:UPSERTOBJECT({path=path, 
-        class = "MODEL_CLASS_HOLDERITEM", 
+        o, changed, new = O:UPSERTOBJECT({path = path, 
+        class = "MODEL_CLASS_GENFOLDER", 
         properties = properties})
     end)
     if not ok then
@@ -55,22 +74,27 @@ function lib:ENSUREFOLDER(path, foldername, desc, custom)
     return o, changed, new
 end
 
-function lib:ENSUREHOLDER(path, holdername, desc, custom)
+function lib:ENSUREHOLDER(path, holdername, desc, unit, additional)
     local properties =
     {
         [".ObjectName"] = holdername,
         [".ObjectDescription"] = desc,
+        [".OpcEngUnit"] = unit,
         [".ArchiveOptions.ArchiveSelector"] = inmation.model.codes.ArchiveTarget.ARC_PRODUCTION,
-        Custom = custom
+        [".ArchiveOptions.StorageStrategy"] = 1,
     }
 
-    if not path or path == "" or path == "cwd" then
-        path = inmation.getself():parent():path()
+    if additional then
+        for k, v in pairs(additional) do
+            properties[k] = v
+        end
     end
+
+    path = lib.getpath(path)
 
     local o, changed, new
     local ok, err = pcall(function()
-        o, changed, new = O:UPSERTOBJECT({path=path, 
+        o, changed, new = O:UPSERTOBJECT({ path = path, 
         class = "MODEL_CLASS_HOLDERITEM", 
         properties = properties})
     end)
@@ -80,17 +104,22 @@ function lib:ENSUREHOLDER(path, holdername, desc, custom)
     return o, changed, new
 end
 
-function lib:ENSUREACTIONITEM(path, name, desc, code, custom)
+function lib:ENSUREACTIONITEM(path, name, desc, code, dedicated, additional)
     local properties =
     {
         [".ObjectName"] = name,
         [".ObjectDescription"] = desc,
-        [".ScriptLibrary.AdvancedLuaScript"] = code,
-        Custom = custom
+        [".AdvancedLuaScript"] = code,
+        [".DedicatedThreadExecution"] = dedicated,
+        [".ArchiveOptions.ArchiveSelector"] = inmation.model.codes.ArchiveTarget.ARC_TEST,
+        [".ArchiveOptions.StorageStrategy"] = 1,
     }
+    path = lib.getpath(path)
 
-    if not path or path == "" or path == "cwd" then
-        path = inmation.getself():parent():path()
+    if additional then
+        for k, v in pairs(additional) do
+            properties[k] = v
+        end
     end
 
     local o, changed, new
