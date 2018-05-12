@@ -141,6 +141,22 @@ local selected = t:GETCOLUMN
 [[selected has the structure {"valueforindex1", "valueforindex2"}]]
 ```
 
+### DATA
+
+Returns all the data in the table. This is equivalent to selecting all the table rows using :SELECT, and the returned lua table format is equivalent.
+
+```lua
+local data = t:DATA()
+```
+
+### INMATIONOBKECT
+
+Returns the underlying inmation table holder. Attention: Direct Manipulation of this object can bring the esi-tables wrapper out of sync!
+
+```lua
+local obj= t:INMATIONOBJECT()
+```
+
 ### SETSCHEMA / VALIDATESCHEMA
 
 Enables to check the table against given schemes.

@@ -602,6 +602,14 @@ function tbl:GETCOLUMN(args)
     return ret
 end
 
+function tbl:DATA()
+    return self:SELECT{WHERE = function(row) return true end}
+end
+
+function tbl:INMATIONOBJECT()
+    return self.state.holderobj
+end
+
 function tbl:COLUMNS()
     local ret = {}
     for col, _ in pairs(self.state.columns) do
