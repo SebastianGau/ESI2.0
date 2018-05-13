@@ -154,8 +154,12 @@ end
 Sets a custom property
 
 ```lua
-modLib:SETCUSTOM{object = obj, key = "asd", value = "asd",  disallownewkeys = false}
 -- key and value always have to be strings!
+modLib:SETCUSTOM{object = obj, key = "asd", value = "asd",  disallownewkeys = false}
+--equivalent to 
+modLib:SETCUSTOM{object = obj, key = "asd", value = "asd"}
+
+--set multiple keys/values
 modLib:SETCUSTOM{object = obj, key = {"asd1", "asd2"}, value = {"v1, v2"}}
 ```
 
