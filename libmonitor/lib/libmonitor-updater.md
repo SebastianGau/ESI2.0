@@ -24,6 +24,7 @@ This function is checking, if a new version of a library provided in the reposit
 >**At the moment only support for git repositories without authentication!**
 
 The function will automatically create a empty TableHolder for the repositories, this would be the libraries from the ESI2.0
+
 | name          | url                                                                                            | scope  |
 | ------------- | ---------------------------------------------------------------------------------------------- | ------ |
 | esi-objects   | <https://raw.githubusercontent.com/SebastianGau/ESI2.0/master/esi-objects/esi-objects.lua>     | System |
