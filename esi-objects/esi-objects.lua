@@ -392,9 +392,9 @@ function mod:EXISTS(args)
   if not args.object then return false end
   if args.object then
     local obj
-    local ok, err = pcall(function() local obj = inmation.getobject(args.object:path()) end)
+    local ok, err = pcall(function() obj = inmation.getobject(args.object:path()) end)
     if not ok then return false end
-    return true
+    return true, obj
   end
 end
 

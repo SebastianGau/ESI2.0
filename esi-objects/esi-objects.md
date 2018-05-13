@@ -35,8 +35,7 @@ local o, changed = O:UPSERTOBJECT({path=inmation.getself():parent():path(),
     properties = properties})
 ```
 
-Chart Example:
-
+Paretochart Example:
 ```lua
 local prop = 
 {
@@ -63,7 +62,7 @@ local o, changed = O:UPSERTOBJECT
     properties=prop}
 ```
 
-
+Trendchart example:
 ```lua
 local properties =
 {
@@ -93,6 +92,7 @@ local o, changed = O:UPSERTOBJECT
   properties=prop}
 ```
 
+XY-Plot example
 ```lua
 local properties =
 {
@@ -134,6 +134,7 @@ Checks existence of an object
 ```lua
 local exists, object = O:EXISTS{ path = o:path() } --path including objectname
 local exists, object = O:EXISTS{ parentpath = o:parent():path(), objectname=o.ObjectName }
+local exists, object = O:EXISTS{ object = o }
 ```
 
 ### GETCUSTOM
