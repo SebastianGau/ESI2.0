@@ -370,27 +370,26 @@ function mod:EXISTS(args)
     else
       return false
     end
-  else
-    if args.parentpath and args.objectname then
-      if type(args.parentpath) ~= "string" then
-        error("invalid type for parentpath: " .. type(args.parentpath))
-      end
-      if type(args.objectname) ~= "string" then
-        error("invalid type for objectname: " .. type(args.objectname))
-      end
-      local parent = inmation.getobject(args.parentpath)
-      if not parent then
-        return false
-      end
-      local o = inmation.getobject(args.parentpath .. "/" .. args.objectname)
-      if not o then
-        return false
-      end
-      return true, o
+  elseif args.parentpath and args.objectname then
+    if type(args.parentpath) ~= "string" then
+      error("invalid type for parentpath: " .. type(args.parentpath), 2)
     end
+    if type(args.objectname) ~= "string" then
+      error("invalid type for objectname: " .. type(args.objectname), 2)
+    end
+    local parent = inmation.getobject(args.parentpath)
+    if not parent then
+      return false
+    end
+    local o = inmation.getobject(args.parentpath .. "/" .. args.objectname)
+    if not o then
+      return false
+    end
+    return true, o
   end
-  if not args.object then return false end
-  if args.object then
+  if not args.object then 
+    return false 
+  else
     local obj
     local ok, err = pcall(function() obj = inmation.getobject(args.object:path()) end)
     if not ok then return false end
