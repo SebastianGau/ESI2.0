@@ -90,6 +90,8 @@ function lib:ENSUREHOLDER(path, holdername, desc, unit, additional)
         end
     end
 
+    
+
     path = lib.getpath(path)
 
     local o, changed, new
@@ -101,7 +103,7 @@ function lib:ENSUREHOLDER(path, holdername, desc, unit, additional)
     if not ok then
         error("Error upserting object: " .. err, 2)
     end
-    return o, changed, new
+    return o, changed, new, properties
 end
 
 function lib:ENSUREACTIONITEM(path, name, desc, code, dedicated, additional)

@@ -983,8 +983,12 @@ local function coerce(val, typ)
         if vt == "boolean" and val then return 1
         elseif vt == "boolean" and not val then return 0
         elseif vt == "string" then
-            local n = tonumber(val,10)
-            if n ~= nil then return n else evalerror("Coersion of " .. tostring(val) .. " from string to number failed") end
+            local n = tonumber(val) --, 10)
+            if n ~= nil then 
+                return n 
+            else 
+                evalerror("Coersion of " .. tostring(val) .. " from string to number failed") 
+            end
         end
         -- null coerces to NaN? We don't have NaN. Yet...
     end

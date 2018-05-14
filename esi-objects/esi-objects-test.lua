@@ -48,9 +48,33 @@ local cwd = inmation.getself():parent():path()
 local h1 = O:UPSERTOBJECT{path = cwd, class = "MODEL_CLASS_HOLDERITEM", properties =  {
     [".ObjectName"] = "holder1"}
 }
+
 local h2 = O:UPSERTOBJECT{path = cwd, class = "MODEL_CLASS_HOLDERITEM", properties =  {
-    [".ObjectName"] = "holder2"}
+    [".ObjectName"] = "holder2",
+    [".CustomOptions.CustomString"] = "asd"}
 }
+
+if h2.CustomOptions.CustomString ~= "asd" then
+    error("Property was not upserted correctly! log " .. O:GETLOG())
+end
+
+local h3 = O:UPSERTOBJECT{path = cwd, class = "MODEL_CLASS_HOLDERITEM", properties =  {
+    [".ObjectName"] = "holder2",
+    [".CustomOptions.CustomString"] = "asd1"}
+}
+if h3.CustomOptions.CustomString ~= "asd1" then
+    error("Property was not upserted correctly! log " .. O:GETLOG())
+end
+
+
+
+local p = json.decode('{".ObjectDescription":"desc",".OpcEngUnit":"m5",".ObjectName":"Test3",".ArchiveOptions.StorageStrategy":1,".ArchiveOptions.ArchiveSelector":2,".CustomOptions.CustomString":"TEST1"}')
+local h4 = O:UPSERTOBJECT{path = cwd, class = "MODEL_CLASS_HOLDERITEM", properties = p }
+local p = json.decode('{".ObjectDescription":"desc",".OpcEngUnit":"m5",".ObjectName":"Test3",".ArchiveOptions.StorageStrategy":1,".ArchiveOptions.ArchiveSelector":2,".CustomOptions.CustomString":"TEST2"}')
+local h4, _, _, details = O:UPSERTOBJECT{path = cwd, class = "MODEL_CLASS_HOLDERITEM", properties = p }
+if h4.CustomOptions.CustomString ~= "TEST2" then
+    error("Property not set: log " .. O:GETLOG())
+end
 
 
 --test a chart creation
