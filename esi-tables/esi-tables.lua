@@ -237,7 +237,7 @@ function tbl:VALIDATESCHEMA()
             --check uniqueness
             if seen[val] and col.unique then
                 table.insert(fails, "double value for column " .. col.name .. " at index " .. i)
-            else
+            elseif val then
                 seen[val] = true
             end
             --check type
@@ -247,7 +247,7 @@ function tbl:VALIDATESCHEMA()
                     if (pr == nil) then
                         -- Parsing failed
                         table.insert(fails, "invalid type for column " .. col.name .. " at index " .. i
-                            ..", parsing expression failed, reason: " .. message)
+                            ..", parsing expression failed, reason: " .. JSON.encode(message))
                     end
                 elseif col.valueset.regex then
                     if not val:match(col.valueset.regex) then

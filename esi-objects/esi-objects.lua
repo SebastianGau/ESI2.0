@@ -56,6 +56,7 @@ end
 --returns an iterator 
 --returns only the critical properties if args.importantonly is set (properties who need to be set before first commit)
 --otherwise only non-critical properties are returned by the iterator which can be set after object creation
+--objectname belongs to both categories (has to be set before first commit but can also bet set at runtime)
 function mod:_properties(kv, args)
   -- collect the keys
   local keys = {}
@@ -70,6 +71,13 @@ function mod:_properties(kv, args)
       end
     end
   end
+
+  --add object name anyway
+  if not (args and args.importantonly) then
+    table.insert(keys, ".ObjectName")
+  end
+
+  --sort by priority number
   table.sort(keys, function(a,b)
       if self._priority[a] and self._priority[b] then
         return self._priority[a] < self._priority[b]
@@ -201,11 +209,14 @@ end
 
 
 --tries to set the property with name "name" to value "value"
---even works for "table-like" properties object.a.b.c = "asd"
---returns true if the object was changed (some value was inserted)
+--even works for "table-like" properties object.a.b.c = "asd" with property name "a.b.c"
+--returns true if the object was changed (some value was inserted/changed)
 --otherwise false
 function mod:_setproperty(o, name, val)
   local changed = false
+  if tonumber(val) then --this is new
+    val = tonumber(val)
+  end
   local ok, res = pcall(function() changed = self:_tryapply(o, name, val) return true end)
   if ok then
     if changed then
@@ -213,7 +224,7 @@ function mod:_setproperty(o, name, val)
     end
     return changed
   else
-    error("Could not set property " .. name .. " to value " .. JSON.encode({value = val}) .. " due to error " .. res)
+    error("Could not set property " .. name .. " to value " .. JSON.encode(val) .. " due to error " .. res)
   end
 end
 
@@ -304,11 +315,16 @@ function mod:UPSERTOBJECT(args)
   if type(args.class)~="string" then
     error("invalid type for object class! type " .. type(args.class), 2)
   end
+  if args.numid and not tonumber(args.numid) then
+    error("Invalid numid argument passed! type " .. type(args.numid))
+  end
+  args.numid = tonumber(args.numid)
 
   --stores creationdetails
   local newcreated = false
-  local exists, o = self:EXISTS{parentpath=args.path, objectname=args.properties[".ObjectName"]}
+  local exists, o = self:EXISTS{parentpath=args.path, objectname=args.properties[".ObjectName"], numid = args.numid} --if numid passed, numid has prevalence before objectname!
   if not exists then
+    --create the object but do only set critial properties, commit once afterwards
     o = self:_createobject(args)
     self:_log("Object was new created at path " .. tostring(args.path))
     newcreated = true
@@ -403,6 +419,8 @@ function mod:GETLOG()
   return JSON.encode(self.log)
 end
 
+--returns true, object, namechanged
+--namechanged can only be returned if a numid is given additionally
 function mod:EXISTS(args)
   if args.path then
     if type(args.path)~='string' then
@@ -425,6 +443,17 @@ function mod:EXISTS(args)
     if not parent then
       return false
     end
+    --parent exists -> check existence of numid at this path
+    if args.numid and type(args.numid) == "number" then
+      local o = inmation.getobject(args.numid)
+      if o and o:parent():path() == args.parentpath then
+        local namechanged = o.ObjectName ~= args.objectname
+        return true, o, namechanged
+      else
+        return false
+      end
+    end
+    --no numid given, parent exists -> check for object name at this parentpath
     local o = inmation.getobject(args.parentpath .. "/" .. args.objectname)
     if not o then
       return false

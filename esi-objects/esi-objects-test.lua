@@ -54,10 +54,10 @@ local h2 = O:UPSERTOBJECT{path = cwd, class = "MODEL_CLASS_HOLDERITEM", properti
     [".CustomOptions.CustomString"] = "asd"}
 }
 
+--test special properties
 if h2.CustomOptions.CustomString ~= "asd" then
     error("Property was not upserted correctly! log " .. O:GETLOG())
 end
-
 local h3 = O:UPSERTOBJECT{path = cwd, class = "MODEL_CLASS_HOLDERITEM", properties =  {
     [".ObjectName"] = "holder2",
     [".CustomOptions.CustomString"] = "asd1"}
@@ -66,6 +66,14 @@ if h3.CustomOptions.CustomString ~= "asd1" then
     error("Property was not upserted correctly! log " .. O:GETLOG())
 end
 
+--test name changes (you have to pass numid for this to work...)
+local testh = O:UPSERTOBJECT{path = cwd, class = "MODEL_CLASS_HOLDERITEM", numid = h3:numid(), properties =  {
+    [".ObjectName"] = "thisnamewaschanged",
+    [".CustomOptions.CustomString"] = "asd1"}
+}
+if testh.ObjectName ~= "thisnamewaschanged" or testh:numid() ~= h3:numid() then
+    error("Name change did not succeed!")
+end
 
 
 local p = json.decode('{".ObjectDescription":"desc",".OpcEngUnit":"m5",".ObjectName":"Test3",".ArchiveOptions.StorageStrategy":1,".ArchiveOptions.ArchiveSelector":2,".CustomOptions.CustomString":"TEST1"}')

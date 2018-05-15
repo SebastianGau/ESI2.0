@@ -49,7 +49,7 @@ function lib.getpath(path)
     return path
 end
 
-function lib:ENSUREFOLDER(path, foldername, desc, additional)
+function lib:ENSUREFOLDER(path, foldername, desc, additional, id)
     local properties =
     {
         [".ObjectName"] = foldername,
@@ -64,7 +64,7 @@ function lib:ENSUREFOLDER(path, foldername, desc, additional)
 
     local o, changed, new
     local ok, err = pcall(function()
-        o, changed, new = O:UPSERTOBJECT({path = path, 
+        o, changed, new = O:UPSERTOBJECT({path = path, numid = id,
         class = "MODEL_CLASS_GENFOLDER", 
         properties = properties})
     end)
@@ -74,7 +74,7 @@ function lib:ENSUREFOLDER(path, foldername, desc, additional)
     return o, changed, new
 end
 
-function lib:ENSUREHOLDER(path, holdername, desc, unit, additional)
+function lib:ENSUREHOLDER(path, holdername, desc, unit, additional, id)
     local properties =
     {
         [".ObjectName"] = holdername,
@@ -96,7 +96,7 @@ function lib:ENSUREHOLDER(path, holdername, desc, unit, additional)
 
     local o, changed, new
     local ok, err = pcall(function()
-        o, changed, new = O:UPSERTOBJECT({ path = path, 
+        o, changed, new = O:UPSERTOBJECT({ path = path, numid = id,
         class = "MODEL_CLASS_HOLDERITEM", 
         properties = properties})
     end)
@@ -106,7 +106,7 @@ function lib:ENSUREHOLDER(path, holdername, desc, unit, additional)
     return o, changed, new, properties
 end
 
-function lib:ENSUREACTIONITEM(path, name, desc, code, dedicated, additional)
+function lib:ENSUREACTIONITEM(path, name, desc, code, dedicated, additional, id)
     local properties =
     {
         [".ObjectName"] = name,
@@ -126,7 +126,7 @@ function lib:ENSUREACTIONITEM(path, name, desc, code, dedicated, additional)
 
     local o, changed, new
     local ok, err = pcall(function()
-        o, changed, new = O:UPSERTOBJECT({path=path, 
+        o, changed, new = O:UPSERTOBJECT({path=path, numid = id,
         class = "MODEL_CLASS_ACTIONITEM", 
         properties = properties})
     end)
