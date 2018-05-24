@@ -38,7 +38,7 @@ A lua table containing the following fields:
 
 #### Usage
 
-The following code snippets demonstrate the useage of the function, including custom properties. The general syntax is there compatible with what you get when rightclicking an object -> admin -> generate lua -> upsert object in inmation, with the exception of the 'class', 'operation' and 'path' field:
+The following code snippets demonstrate the useage of the function, including custom properties. The general syntax is compatible with what you get when rightclicking an object in inmation and clicking 'admin -> generate lua -> upsert object' in inmation, with the exception of the 'class', 'operation' and 'path' fields:
 
 ```lua
 inmation.mass({
@@ -99,7 +99,7 @@ Upserting a folder:
 local properties =
 {
   ObjectName = "testfolder", --both syntaxes are allowed for
-  [".ObjectDescription"] = "testdesc", -- propertes which do not contain dots
+  [".ObjectDescription"] = "testdesc", -- properties which do not contain dots
   Custom =
   {
     ["customkey"] = "customvalue",
