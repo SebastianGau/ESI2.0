@@ -100,6 +100,21 @@ function mod:_cconcat(t)
   return table.concat(res)
 end
 
+function mod:_transform(t)
+  local ret = {}
+  for k, v in pairs(t) do
+    if k:lower() == 'custom' then
+      ret[k] = v
+    elseif k:match("^%.") then
+      ret[k] = v
+    else
+      ret["." .. k] = v
+    end
+  end
+  return ret
+end
+
+
 --helper for tryapply
 --compares the current value of the property with the value to set
 function mod:_equal(v1, v2)
@@ -269,21 +284,23 @@ function mod:UPSERTOBJECT(args)
   if not args.path then
     error("path field is empty!", 2)
   end
-  if not type(args.path)=="string" then
-    error("invalid type for path field!", 2)
+  if type(args.path) ~= "string" then
+    error("invalid type for path field: " .. type(path), 2)
   end
   if not args.properties then
     error("the properties field is empty!", 2)
   end
+  if type(args.properties)~="table" then
+    error("invalid type for properties! type " ..  type(args.properties), 2)
+  end
+  args.properties = self:_transform(args.properties)
   if not args.properties[".ObjectName"] then
     error("no object name is provided!" , 2)
   end
   if type(args.properties[".ObjectName"])~="string" then
     error("invalid type for ['ObjectName']! type " ..  type(args.properties[".ObjectName"]), 2)
   end
-  if type(args.properties)~="table" then
-    error("invalid type for properties! type " ..  type(args.properties), 2)
-  end
+  
   if not self:EXISTS({path=args.path}) then
     error("the parent object does not exist! path " .. args.path, 2)
   end
