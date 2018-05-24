@@ -222,7 +222,7 @@ function _ODBCConnection:CONNECT()
         return self
     end
     local ms = inmation.currenttime()
-    --self.STATE.ENVIRONMENT = self.STATE.DRIVER:odbc()
+    self.STATE.ENVIRONMENT = self.STATE.DRIVER:odbc()
     local err
     self.STATE.CONNECTION, err = self.STATE.ENVIRONMENT:connect(self.STATE.DSN, self.STATE.USER, self.STATE.PASSWORD)
     if self.STATE.CONNECTION then
@@ -408,21 +408,14 @@ function _ODBCConnection:_new(args)
     if args.Codepage then o.STATE.CODEPAGE = args.Codepage end
     if args.Maxrecords then o.STATE.MAXRECORDS = args.Maxrecords end
     if args.Itermode then o.STATE.ITERMODE = args.Itermode end
-    if args.Driver then o.STATE.DRIVERMODULE = args.Driver end
 
     --load driver (only once on connection creation)
     local ok, err = pcall(function()
         o.STATE.DRIVER = require(tostring(o.STATE.DRIVERMODULE))
-        if o.STATE.DRIVERMODULE == "luasql.odbc" then
-            self.STATE.ENVIRONMENT = self.STATE.DRIVER:odbc() 
-        elseif o.STATE.DRIVERMODULE == "luasql.oci8" then
-            self.STATE.ENVIRONMENT = self.STATE.DRIVER:oci8()
-        else
-            error("Unknown driver module!")
-        end
+        o.STATE.ENVIRONMENT = o.STATE.DRIVER:odbc()
     end)
     if not ok then
-        error("Could not load driver " .. o.STATE.DRIVERMODULE, 3)
+        error("Could not load driver " .. o.STATE.DRIVERMODULE .. ", error: " .. tostring(err), 3)
     end
 
     --set connection status
@@ -439,9 +432,11 @@ function _ODBCConnection:_new(args)
     self.__index = self
     local instance = setmetatable(o, self)
     
+    --if autoclose is off, establish connection
+    --otherwise, connection will be established on query execution
     if not self.STATE.AUTOCLOSE then
         local o, e = pcall(function() 
-        instance:CONNECT()
+            instance:CONNECT()
         end)
         if not ok then 
             error("Could not establish connection: " .. e, 2)
@@ -587,7 +582,6 @@ function lib:GETCONNECTION(args)
         Codepage = 0, --to be cleared
         Maxrecords = args.Maxrecords,
         Itermode = args.Itermode,
-        Driver = args.Driver,
         Parent = self,
     }
 
