@@ -67,11 +67,12 @@ if h3.CustomOptions.CustomString ~= "asd1" then
 end
 
 --test name changes (you have to pass numid for this to work...)
+local new = "thisnamewaschanged" .. inmation.now()
 local testh = O:UPSERTOBJECT{path = cwd, class = "MODEL_CLASS_HOLDERITEM", numid = h3:numid(), properties =  {
-    [".ObjectName"] = "thisnamewaschanged",
+    [".ObjectName"] = new,
     [".CustomOptions.CustomString"] = "asd1"}
 }
-if testh.ObjectName ~= "thisnamewaschanged" or testh:numid() ~= h3:numid() then
+if testh.ObjectName ~= new or testh:numid() ~= h3:numid() then
     error("Name change did not succeed!")
 end
 
