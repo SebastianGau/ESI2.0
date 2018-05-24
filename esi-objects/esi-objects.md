@@ -98,8 +98,8 @@ Upserting a folder:
 ```lua
 local properties =
 {
-  ObjectName = "testfolder", --both syntaxes are allowed for propertes which to not contain dots
-  [".ObjectDescription"] = "testdesc",
+  ObjectName = "testfolder", --both syntaxes are allowed for
+  [".ObjectDescription"] = "testdesc", -- propertes which do not contain dots
   Custom =
   {
     ["customkey"] = "customvalue",
