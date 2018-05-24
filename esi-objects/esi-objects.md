@@ -198,11 +198,14 @@ Reads one or multiple custom properties of an object
 The following example demonstrates all possible useage combinations of this function:
 
 Possibility 1: Read only one key. The args table has the following structure:
+
 | Field | Data Type | meaning |
 | ------- | ------- | --------------------- |
 | object  | `table` | An inmation object reference (lua table)
 | key     | `string`| The custom key whose value is to be read
+
 Example:
+
 ```lua
 --val is nil if custom key 'asd' does not exist or has no value
 local val = O:GETCUSTOM{ object = o, key = "asd"} 
@@ -210,11 +213,14 @@ local val = O:GETCUSTOM{ object = o, key = "asd"}
 
 Possibility 2: Read multiple keys. In this case, custom keys which could not be found are returned
 as a second return argument
+
 | Field | Data Type | meaning |
 | ------- | ------- | --------------------- |
 | object  | `table` | An inmation object reference (lua table)
 | key    | `table`| An ordered lua table (array) holding the keys to be read
+
 Example:
+
 ```lua
 --assume the value for key 'asd1' is 'v1' and for keys 'asd2' is 'v2'
 local vals, nilkeys = O:GETCUSTOM { object = o, key = {"asd1", "asd2"} }
@@ -222,6 +228,7 @@ if vals[1]~="v1" or vals[2]~="v2"  then --check nilkeys
     error("invalid values: " .. tostring(vals[1]) .. " " .. tostring(vals[2]) .. " " .. tostring(table.concat(nilkeys)))
 end
 ```
+
 The first return argument is a ordered lua table/array holding the keys which were read successfully in the ordered given in the 'key' argument in the args table. The second return argument is nil if all keys could be read successfully, otherwise it is an ordered lua table containing the keys which could not be found.
 
 #### Usage
@@ -240,11 +247,13 @@ Reads one or multiple custom properties of an object
 The following example demonstrates all possible useage combinations of this function based in the input argument table:
 
 Possibility 1: Set only one key. The args table has the following structure:
+
 | Field | Data Type | meaning |
 | ------- | ------- | --------------------- |
 | object  | `table` | An inmation object reference (lua table)
 | key     | `string`| The custom key whose value is to be read
 | value   | `string`| The value which is to be assigned for this key
+
 Example:
 
 ```lua
@@ -253,11 +262,13 @@ O:SETCUSTOM{object = obj, key = "asd", value = "asd"}
 ```
 
 Possibility 2: Set multiple keys at once. In this case the args table has the following structure:
+
 | Field | Data Type | meaning |
 | ------- | ------- | --------------------- |
 | object  | `table` | An inmation object reference (lua table)
 | key     | `table`| The custom keys whose value is to be read as an ordered lua table.
 | value     | `table`| The values which are to be assigned for this key as an ordered lua table.
+
 Example:
 
 ```lua
@@ -270,6 +281,8 @@ Was demonstrated before.
 
 ### SORTCUSTOM
 
+TO BE ADDED BY TIMO
+
 #### Parameters
 
 #### Useage
@@ -277,6 +290,8 @@ Was demonstrated before.
 Sorts custom properties of an object. Documentation
 
 ### BREAKPATH
+
+TO BE ADDED BY TIMO
 
 #### Parameters
 

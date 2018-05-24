@@ -94,7 +94,7 @@ end
 
 function mod:_cconcat(t)
   local res = {}
-  for k, v in pairs(t) do
+  for _, v in pairs(t) do
     table.insert(res, tostring(v))
   end
   return table.concat(res)
