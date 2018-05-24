@@ -13,7 +13,7 @@ end
 
 function _ODBCStatistics:_new(o)
     --without the deepcopy(self) here, all table field of the object point to the same table
-    o = o or BUCKET.DEEPCOPY(self) 
+    o = {}
     self.__index = self
     setmetatable(o, self)
 
@@ -155,14 +155,24 @@ _ODBCConnection.INFOS=
 function _ODBCConnection:_ascii(s)
     --if self.utf8 then return s end
     --error("convert using codepage " .. tostring(self.codepage))
-    return inmation.utf8toascii(s,self.codepage)
+    local ret = ""
+    local o, e = pcall(function() ret = inmation.utf8toascii(s) end)
+    if not o then
+        return s
+    end
+    return ret
 end
 
 -- converts all strings from the source to UTF-8
 function _ODBCConnection:_utf8(s)
     --if self.utf8 then return s end
     --error("convert using codepage " .. tostring(self.codepage))
-    return inmation.asciitoutf8(s,self.codepage)
+    local ret = ""
+    local o, e = pcall(function() ret = inmation.asciitoutf8(s)end)
+    if not o then
+        return s
+    end
+    return ret
 end
 
 -- splits multi-line strings into a table as they are returned from ODBC drivers
@@ -394,8 +404,13 @@ end
 -- }
 --input table args was typchecked by connection manager
 function _ODBCConnection:_new(args)
-    local o = BUCKET.DEEPCOPY(self)
+    --local o = BUCKET.DEEPCOPY(self)
 
+    local o = {}
+    o.STATISTICS = BUCKET.DEEPCOPY(self.STATISTICS)
+    o.STATE = BUCKET.DEEPCOPY(self.STATE)
+    o.STATUS = BUCKET.DEEPCOPY(self.STATUS)
+    
     --it was made sure in the connection factory that these fields exist
     o.STATE.NAME = args.Name
     o.STATE.DSN = args.DSN
