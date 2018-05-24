@@ -45,13 +45,22 @@ end
 
 local cwd = inmation.getself():parent():path()
 
-local h1 = O:UPSERTOBJECT{path = cwd, class = "MODEL_CLASS_HOLDERITEM", properties =  {
-    [".ObjectName"] = "holder1"}
+local h1 = O:UPSERTOBJECT
+{
+    path = cwd, 
+    class = "MODEL_CLASS_HOLDERITEM", properties =  {
+    ObjectName = "holder1"}
 }
 
-local h2 = O:UPSERTOBJECT{path = cwd, class = "MODEL_CLASS_HOLDERITEM", properties =  {
-    [".ObjectName"] = "holder2",
-    [".CustomOptions.CustomString"] = "asd"}
+local h2 = O:UPSERTOBJECT
+{
+    path = cwd, 
+    class = "MODEL_CLASS_HOLDERITEM", 
+    properties =  
+    {
+        ObjectName = "holder2",
+        [".CustomOptions.CustomString"] = "asd"
+    }
 }
 
 --test special properties
@@ -59,7 +68,7 @@ if h2.CustomOptions.CustomString ~= "asd" then
     error("Property was not upserted correctly! log " .. O:GETLOG())
 end
 local h3 = O:UPSERTOBJECT{path = cwd, class = "MODEL_CLASS_HOLDERITEM", properties =  {
-    [".ObjectName"] = "holder2",
+    ObjectName = "holder2",
     [".CustomOptions.CustomString"] = "asd1"}
 }
 if h3.CustomOptions.CustomString ~= "asd1" then
@@ -89,9 +98,9 @@ end
 --test a pareto chart creation
 local props = 
 {
-  [".ObjectName"] = "testparetochart",
-  [".ObjectDescription"] = "testdesc",
-  [".ChartType"] = inmation.model.codes.SelectorChartType.CHART_PARETO, -- paretochart
+  ObjectName = "testparetochart",
+  ObjectDescription = "testdesc",
+  ChartType = inmation.model.codes.SelectorChartType.CHART_PARETO, -- paretochart
   [".ParetoChart.KPIYAxisLabel"] = "Signal Contribution [%]", 
   [".ParetoChart.KPIXAxisLabel"] = "xlabel", 
   [".ParetoChart.KPIBarSettings.KPIBar"] = {h1:path(), h2:path()}, 
@@ -117,9 +126,9 @@ local o, changed = O:UPSERTOBJECT
 --test a xy chart creation
 local props =
 {
-  [".ObjectName"] = "testxychart",
-  [".ObjectDescription"] = "testdesc",
-  [".ChartType"] = 	inmation.model.codes.SelectorChartType.CHART_XYPLOT,
+  ObjectName = "testxychart",
+  ObjectDescription = "testdesc",
+  ChartType = 	inmation.model.codes.SelectorChartType.CHART_XYPLOT,
   [".XYPlotChart.KPIStartTime"] = "*-3d",
   [".XYPlotChart.KPIEndTime"] = "*",
   [".XYPlotChart.KPIXAxisLabel"] = "X",
@@ -138,7 +147,7 @@ local props =
   [".XYPlotChart.KPIXYPlotPenSettings.PenYDataLineType"] =	{inmation.model.codes.KPIDataLineType.SYMBOL},
   Custom =
   {
-    ["customkey"] = "customvalue",
+    customkey = "customvalue",
     ["customkey1"] = "customvalue1"
   }
 }

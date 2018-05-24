@@ -38,13 +38,67 @@ A lua table containing the following fields:
 
 #### Usage
 
-The following code snippets demonstrate the useage of the function, including custom properties:
+The following code snippets demonstrate the useage of the function, including custom properties. The general syntax is there compatible with what you get when rightclicking an object -> admin -> generate lua -> upsert object in inmation, with the exception of the 'class', 'operation' and 'path' field:
+
+```lua
+inmation.mass({
+	{
+		class = inmation.model.classes.Chart, --not supported
+		operation = inmation.model.codes.MassOp.UPSERT, --not supported
+		path = "/BASF/Test Functions/testtrendchart", --not supported
+		ObjectName = "testtrendchart",
+		ObjectDescription = "testdesc",
+		["CustomOptions.CustomProperties.CustomPropertyValue"] = {
+			"customvalue1",
+			"customvalue",
+		},
+		["CustomOptions.CustomProperties.CustomPropertyName"] = {
+			"customkey1",
+			"customkey",
+		},
+		["TrendChart.KPIYAxisLabel"] = "°C",
+		["TrendChart.KPIPenSettings.KPIPenTrendType"] = {
+			1,
+			1,
+		},
+		["TrendChart.KPIPenSettings.KPIPenMaxYAxis"] = {
+			0,
+			100,
+		},
+		["TrendChart.KPIPenSettings.KPIPenMinYAxis"] = {
+			0,
+			100,
+		},
+		["TrendChart.KPIPenSettings.KPIPenName"] = {
+			"test1",
+			"test2",
+		},
+		["TrendChart.KPIPenSettings.KPIPenColor"] = {
+			8,
+			8,
+		},
+		["TrendChart.KPIPenSettings.KPIPenOffset"] = {
+			" ",
+			" ",
+		},
+		["TrendChart.KPIPenSettings.AggregateSelection"] = {
+			40,
+			40,
+		},
+		["TrendChart.KPIPenSettings.KPIPen"] = {
+			"/System/Core/Core Logic/Tests/New ESI Objects/holder1",
+			"/System/Core/Core Logic/Tests/New ESI Objects/thisnamewaschanged1527183733456",
+		},
+		["TrendChart.VisualKPIObject"] = "Trend"
+	}
+})
+```
 
 Upserting a folder:
 ```lua
 local properties =
 {
-  [".ObjectName"] = "testfolder",
+  ObjectName = "testfolder", --both syntaxes are allowed for propertes which to not contain dots
   [".ObjectDescription"] = "testdesc",
   Custom =
   {
