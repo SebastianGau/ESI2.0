@@ -85,12 +85,12 @@ if h4.CustomOptions.CustomString ~= "TEST2" then
 end
 
 
---test a chart creation
-local prop = 
+--test a pareto chart creation
+local props = 
 {
-  [".ObjectName"] = "testchartname",
+  [".ObjectName"] = "testparetochart",
   [".ObjectDescription"] = "testdesc",
-  [".ChartType"] = 2, -- paretochart
+  [".ChartType"] = inmation.model.codes.SelectorChartType.CHART_PARETO, -- paretochart
   [".ParetoChart.KPIYAxisLabel"] = "Signal Contribution [%]", 
   [".ParetoChart.KPIXAxisLabel"] = "xlabel", 
   [".ParetoChart.KPIBarSettings.KPIBar"] = {h1:path(), h2:path()}, 
@@ -106,9 +106,76 @@ local prop =
 }
 
 local o, changed = O:UPSERTOBJECT
-{path="/BASF", 
+{
+    path = "/BASF/Test Functions", 
     class = "MODEL_CLASS_CHART", 
-    properties=prop}
+    properties = props
+}
+
+
+--test a xy chart creation
+local props =
+{
+  [".ObjectName"] = "testxychart",
+  [".ObjectDescription"] = "testdesc",
+  [".ChartType"] = 	inmation.model.codes.SelectorChartType.CHART_XYPLOT,
+  [".XYPlotChart.KPIStartTime"] = "*-3d",
+  [".XYPlotChart.KPIEndTime"] = "*",
+  [".XYPlotChart.KPIXAxisLabel"] = "X",
+  [".XYPlotChart.KPIYAxisLabel"] = "Y",
+  [".XYPlotChart.KPIPlotYAxis"] = inmation.model.codes.TrendYAxis.AUTOSCALE,
+  [".XYPlotChart.KPIMinYAxis"] = 0,
+  [".XYPlotChart.KPIMaxYAxis"] = 10,
+  [".XYPlotChart.KPIXYPlotPenSettings.PenX"] = {h1:path()},
+  [".XYPlotChart.KPIXYPlotPenSettings.AggregateSelectionX"] = {inmation.model.codes.Aggregates.AGG_TYPE_BESTFIT},
+  [".XYPlotChart.KPIXYPlotPenSettings.PenY"] = {h2:path()},
+  [".XYPlotChart.KPIXYPlotPenSettings.AggregateSelectionY"] = {inmation.model.codes.Aggregates.AGG_TYPE_BESTFIT},
+  [".XYPlotChart.KPIXYPlotPenSettings.KPIPenColor"] = {inmation.model.codes.KPIColors.RED},
+  [".XYPlotChart.KPIXYPlotPenSettings.KPIPenName"] = {"testpen"},
+  [".XYPlotChart.KPIXYPlotPenSettings.PenIsTimeSeries"] = {true},
+  [".XYPlotChart.KPIXYPlotPenSettings.PenPlotContents"] =  {inmation.model.codes.KPIPlotContent.YDATA},
+  [".XYPlotChart.KPIXYPlotPenSettings.PenYDataLineType"] =	{inmation.model.codes.KPIDataLineType.SYMBOL},
+  Custom =
+  {
+    ["customkey"] = "customvalue",
+    ["customkey1"] = "customvalue1"
+  }
+}
+local o, changed = O:UPSERTOBJECT{
+    path = "/BASF/Test Functions",
+    class = "MODEL_CLASS_CHART",
+    properties = props
+}
+
+--test trend chart creation
+local props =
+{
+  [".ObjectName"] = "testtrendchart",
+  [".ObjectDescription"] = "testdesc",
+  [".ChartType"] = 	inmation.model.codes.SelectorChartType.CHART_TREND,
+  [".TrendChart.KPITrendScale"] = inmation.model.codes.KPITrendScale.SINGLESCALE,
+  [".TrendChart.TrendYAxis"] = inmation.model.codes.TrendYAxis.AUTOSCALE, --PENMINANDMAXYAXIS
+  [".TrendChart.KPIYAxisLabel"] = "°C",
+  [".TrendChart.KPIPenSettings.KPIPen"] = {h1:path(), h2:path()},
+  [".TrendChart.KPIPenSettings.AggregateSelection"] = {inmation.model.codes.Aggregates.AGG_TYPE_BESTFIT, inmation.model.codes.Aggregates.AGG_TYPE_BESTFIT},
+  [".TrendChart.KPIPenSettings.KPIPenOffset"] = {" ", " "},
+  [".TrendChart.KPIPenSettings.KPIPenColor"] = {inmation.model.codes.KPIColors.RED, inmation.model.codes.KPIColors.RED},
+  [".TrendChart.KPIPenSettings.KPIPenName"] = {"test1", "test2"},
+  [".TrendChart.KPIPenSettings.KPIPenMinYAxis"] = {0, 100},
+  [".TrendChart.KPIPenSettings.KPIPenMaxYAxis"] = {0, 100},
+  [".TrendChart.KPIPenSettings.KPIPenTrendType"] = {inmation.model.codes.KPIPenTrendType.INTERPOLATED, 	inmation.model.codes.KPIPenTrendType.INTERPOLATED},
+  Custom =
+  {
+    ["customkey"] = "customvalue",
+    ["customkey1"] = "customvalue1"
+  }
+}
+local o, changed = O:UPSERTOBJECT
+{
+  path = "/BASF/Test Functions",
+  class = "MODEL_CLASS_CHART",
+  properties = props
+}
 
 
 
