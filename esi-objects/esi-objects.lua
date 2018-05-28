@@ -709,7 +709,7 @@ function mod:BREAKPATH(path)
   local emergency
   local finished
   repeat
-    iter=iter+1
+    iter = iter + 1
     local rec={PATH=path, EXISTS=false, TYPE=0}
     rec.EXISTS=self:EXISTS{path=path}
     if rec.EXISTS then rec.TYPE = inmation.getobject(path):type() end
