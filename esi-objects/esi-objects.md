@@ -16,9 +16,24 @@ The 'esi-objects' library provides simplified object creation based on the minim
 
 ## Known Issues
 
-None (until now).
+- Documentation (this markdown file) is not completed
+- Unit tests are missing
 
 ## Available functions
+
+[EXISTS](###EXISTS(args))
+
+[GETCUSTOM](###GETCUSTOM(args))
+
+[INFO](###INFO)
+
+[PATHOBJECTS](###PATHOBJECTS(path_or_object,json))
+
+[SETCUSTOM](###SETCUSTOM(args))
+
+[SORTCUSTOM](###SORTCUSTOM(args))
+
+[UPSERTOBJECT](###UPSERTOBJECT(args))
 
 ### UPSERTOBJECT(args)
 

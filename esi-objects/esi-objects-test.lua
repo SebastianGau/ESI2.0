@@ -1,6 +1,14 @@
---<ObjectVersion>109</ObjectVersion>
 local O = require 'esi-objects'
 local json = require "dkjson"
+
+
+--delete objects from previous tests
+local p = inmation.getself():parent()
+for _, ch in pairs(p:children()) do
+    if ch:numid() ~= inmation.getself():numid() then
+        inmation.deleteobject(ch)
+    end
+end
 
 local properties = 
 {
@@ -28,7 +36,7 @@ O:SETCUSTOM{object = o, key = {"asd1", "asd2"}, value = {"v1", "v2"}}
 
 local val = O:GETCUSTOM{object=o, key="asd"} --returns nil if custom key does not exist
 if val~="v" then
-    error("invalid value: " .. tostring(val))
+    error("invalid value, : " .. tostring(val))
 end
 local vals, nilkeys = O:GETCUSTOM{object=o, key={"asd1", "asd2"}}
 if vals[1]~="v1" or vals[2]~="v2"  then --check nilkeys
