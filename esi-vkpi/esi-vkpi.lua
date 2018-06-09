@@ -566,32 +566,16 @@ end
 local ADG =
 {
     DB = nil,
-    catLib = require "inmation.Catalog",
     logswitch = false,
     modelsFoundInVKPI = {},
     GridPlacers = nil, --is initialized at database connection establishment
     ODBCConnectionData = 
     {
-        ["dsn"] = "vkpiadmin1",
-        ["user"] = "sa",
-        ["password"] = "1877Mtk!1"
+        ["dsn"] = "",
+        ["user"] = "",
+        ["password"] = ""
     },
-    --name of the vkpi database instances availible in database
-    AvailibleDatabases =
-    {
-        ["admin"] = "visualkpi",
-        ["visualkpitg"] = "visualkpitg",
-        ["Technische Gase"] = "visualkpitg",
-        ["visualkpisc"] = "visualkpisc",
-        ["Steamcracker"] = "visualkpisc",
-        ["visualkpieo"] = "visualkpieo",
-        ["Ethylenoxid"] = "visualkpieo",
-        ["visualkpika"] = "visualkpika",
-        ["Klaeranlage"] = "visualkpika",
-        ["visualkpipg"] = "visualkpipg",
-        ["PGS"] = "visualkpipg"
-    },
-    CurrentlySelectedDatabase = "admin",
+    CurrentlySelectedDatabase = "",
     SQLQueries = SQLQueries,
     MappingTable = VKPIMappingTable
 }
@@ -655,15 +639,19 @@ function ADG:new()
     return o
 end
 
-function ADG:CONNECTDATABASE(name)
+function ADG:CONNECTDATABASE(instancename, connection)
+    if not connection.dsn then error("You have to specify a odbc dsn!", 2) end
+    if not connection.user then error("You have to specify a database user!", 2) end
+    if not connection.password then connection.password = "" end
+    self.ODBCConnectionData = {dsn = connection.dsn, user = connection.user, password = connection.password}
     local ok, err = pcall(
         function()
             self.DB = ODBC:GETCONNECTION
             {
-                Name = "vkpi",
-                DSN = self.ODBCConnectionData["dsn"], 
-                User = self.ODBCConnectionData["user"], 
-                Password = self.ODBCConnectionData["password"],
+                Name = instancename,
+                DSN = connection.dsn, 
+                User = connection.user, 
+                Password = connection.password,
                 Maxrecords = 100000,
                 Itermode = ODBC.MODE.NUMBERINDEX,
                 Autoclose = false
@@ -675,25 +663,16 @@ function ADG:CONNECTDATABASE(name)
     end
     self.GridPlacers = {}
 
-    if name and type(name) == "string" then
-        local o, e = pcall(function() self:SELECTDATABASE(name) end)
-        if not o then error(e, 2) end
-    else
-        self:SELECTDATABASE('admin')
-    end
+    -- if instancename and type(instancename) == "string" then
+    --     local o, e = pcall(function() self:SELECTDATABASE(instancename) end)
+    --     if not o then error(e, 2) end
+    -- end
     return true
 end
 
 
 function ADG:SELECTDATABASE(databasename)
-    if self.AvailibleDatabases[databasename] == nil then
-        error("unknown VKPI database: " .. databasename, 2)
-    else
-        self.CurrentlySelectedDatabase = databasename
-        self.SQLQueries:SetDBName(self.AvailibleDatabases[databasename])
-    end
-
-    local sql = 'USE ' .. self.AvailibleDatabases[databasename]
+    local sql = 'USE ' .. databasename
     self.DB:EXECUTE(sql)
 end
 
@@ -846,7 +825,7 @@ function ADG:_createProfile(ProfileName, ProfileDescription)
 end
 
 function ADG:_setProfileDescription(ProfileName, ProfileDescription)
-    local sql = SQLQueries.SetProfileDescription:format(ProfileDescription, ProfileName)
+    local sql = SQLQueries:SetProfileDescription():format(ProfileDescription, ProfileName)
     self.DB:EXECUTE(sql)
 end
 
