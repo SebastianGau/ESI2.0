@@ -4,7 +4,7 @@ local json = require 'dkjson'
 
 
 local path = inmation.getself():parent():path()
-local teststage = 6
+local teststage = 7
 local mode = "persistoncommand"
 local name = "testtable"
 pcall(function() inmation.deleteobject(path .. "/" .. name) end)
@@ -132,7 +132,7 @@ local schema =
     maxrows = 3,
 }
 
-local ok, err = pcall(t:SETSCHEMA(schema))
+local ok, err = pcall(function() t:SETSCHEMA(schema) end)
 if ok then
     error("The schema structure was invalid and should have caused an error!")
 end
@@ -200,12 +200,51 @@ if teststage == 6 then
     do return "result of schema test: success: " .. tostring(res) .. ", errors: " .. err or "none" end
 end
 
-if not res then
-    do return err end
-else
-    do return "schema test passed" end
-end
+local tab = require 'esi-tables'
+local s = inmation.getself()
+tab:SETTABLE{object = s, key = "key1", value = {{col1 = 1}, {col2 = 2}}}
+tab:SETTABLE{object = s, key = "key2", value = {{col3 = 1}, {col4 = false}}}
+tab:SETTABLE{object = s, key = "key3", value = {{col1 = 1}, {col2 = false}, {col3 = "a"}}}
 
+local t1 = tab:GETTABLE{object = s, key = "key1"}
+if t1[1].col1 ~= 1 then error("Invalid value!") end
+local t2 = tab:GETTABLE{object = s, key = "key2"}
+if t2[1].col3 ~= 1 then error("Invalid value!") end
+
+local t3 = tab:GETTABLE{object = s, key = "key3"}
+local schema =
+{
+    columns = 
+    {
+        {
+            name = "col1",
+            required = true, --the column is mandatory
+            unique = true, --the column has to feature unique values
+            nonempty = false, --all values in the column have to be nonemoty
+            valueset = {1, 2, 3}, --means that the values in the table have to be either 1, 2 or 3
+        },
+        {
+            name = "col2",
+            required = true,
+            unique = true,
+            nonempty = false,
+            valueset = {luatype="boolean"},
+        },
+        {
+            name = "col3",
+            required = true,
+            unique = false,
+            nonempty = false,
+            valueset = {luatype="string"},
+        },
+    },
+    maxrows = 3,
+}
+
+local ok, err = tab:VALIDATETABLE(t3, schema)
+if not ok then
+    error("Schema validation should have passed but failed with error " .. err)
+end
 
 
 

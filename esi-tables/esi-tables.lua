@@ -15,9 +15,10 @@ local tbl =
     state =
     {
         mode = "persistoncommand", --or "persistimmediately"
-        holderobj = {},
-        data = {},
+        holderobj = nil, --is not set for stateless calls
+        data = {}, --stateless calls inject the table data here
         columns = {}, --columns[columnname] = true
+
         insync = false, --means that the holders table and the table inside this object are potentially out of sync
         schema = nil,
         columnssynchronized = false, --means that a non-empty table was read and the columns were extracted
@@ -93,14 +94,20 @@ function tbl:_isempty()
 end
 
 function tbl:_synctoimage()
-    self.state.holderobj.TableData = self.state.data
-    self.state.holderobj:commit()
+    if self.state.holderobj then --for stateless calls
+        self.state.holderobj.TableData = self.state.data
+        self.state.holderobj:commit()
+    end
     self.state.insync = true
 end
 
 --problem: sync columns from image with empty table
-function tbl:_syncfromimage()
-    self.state.data = self.state.holderobj.TableData 
+function tbl:_syncfromimage(sometable)
+    if self.state.holderobj then --for stateless calls
+        self.state.data = self.state.holderobj.TableData
+    else
+        self.state.data = sometable
+    end
 --returns an empty table even if there were columns initialized
     self.state.columns = {}
 
@@ -149,7 +156,7 @@ function tbl:_syncifnecessary()
 end
 
 
-function tbl:_validateinputschema(sc)
+function tbl:_inputschema(sc)
     local s = SCHEMA
 
     --maps from integer to string or number
@@ -199,12 +206,37 @@ function tbl:_setschema(schema)
 end
 
 function tbl:SETSCHEMA(schema)
-    local ok, err = self:_validateinputschema(schema)
+    local ok, err = self:_inputschema(schema)
     if not ok then
         error("Error validating input schema: " .. err, 2)
     end
     self:_setschema(schema)
 end
+
+function tbl:_tryconvertluatype(t)
+    if tonumber(t) then
+        return tonumber(t)
+    else
+        if t == "true" then
+            return true
+        elseif t == "false" then
+            return false
+        end
+        return tostring(t)
+    end
+end
+
+function tbl:_isempty(t)
+    if tostring(t) == "nil" or t == "" then
+        return true
+    end
+    return false
+end
+
+function tbl:_notempty(t)
+    return not self:_isempty(t)
+end
+
 
 --
 function tbl:VALIDATESCHEMA()
@@ -219,16 +251,16 @@ function tbl:VALIDATESCHEMA()
 
     for _, col in pairs(schema.columns) do
         --check required columns
-        if self:COLUMNEXISTS(col.name)==false and col.required then
+        if self:COLUMNEXISTS(col.name) == false and col.required then
             table.insert(fails, "Mandatory column " .. col.name .. " is missing!")
             goto skipcolumn
         end
         --start to check the column
         local seen = {}
         for i=1, #(data) do
-            local val = data[i][col.name]
+            local val = data[i][col.name] --overwrite nil here perhaps?!
             --check emptyness
-            if tostring(val)==tostring(self.config.emptyidentifier) and col.nonempty then
+            if self:_isempty(val) and col.nonempty then
                 table.insert(fails, "empty value for " .. col.name .. " at index " .. i)
                 -- local h = self.JSON.encode(self.H.DEEPCOPY(data))
                 -- error("data: " .. h)
@@ -240,8 +272,8 @@ function tbl:VALIDATESCHEMA()
             elseif val then
                 seen[val] = true
             end
-            --check type
-            if col.valueset then 
+            --check type - this is only checked if the value is nonempty
+            if col.valueset and self:_notempty(t) then 
                 if col.valueset.mathexpression then
                     local pr, message = XP.compile(tostring(val))
                     if (pr == nil) then
@@ -255,14 +287,10 @@ function tbl:VALIDATESCHEMA()
                             ..", expected match to pattern " .. col.valueset.regex .. " , got value: " .. tostring(val))
                     end
                 elseif col.valueset.luatype then --valueset = {luatype="string"},
-                    if tostring(col.valueset.luatype) == "number" then
-                        if not tonumber(val) then
-                            table.insert(fails, "invalid type for column " .. col.name .. " at index " .. i
-                            ..", expected numbers, got " .. type(val) .. ", value: " .. tostring(val))
-                        end
-                    elseif type(val) ~= col.valueset.luatype then
+                    val = self:_tryconvertluatype(val)
+                    if tostring(col.valueset.luatype) ~= type(val) then
                         table.insert(fails, "invalid type for column " .. col.name .. " at index " .. i
-                            ..", expected " .. tostring(col.valueset.luatype) .. ", got " .. type(val) .. ", value: " .. tostring(val))
+                        ..", expected " .. tostring(col.valueset.luatype) .. ", got " .. type(val) .. ", value: " .. tostring(val))
                     end
                 else --valueset {"asd","sad", 1},
                     local rev = {}
@@ -693,6 +721,215 @@ function tbl:SETCONFIGURATIONTABLE(args)
     end
     return data
 end
+
+
+--kvtab is a table whose keys and values are strings!
+function tbl._upsertcustomtab(_,obj, kvtab, allownewkey)
+    local custkeys, custvalues
+    local ok, err = pcall(function()
+        custkeys = obj.CustomOptions.CustomTables.CustomTableName
+        custvalues = obj.CustomOptions.CustomTables.TableData
+      end)
+    if not ok then
+      error("could not access custom properties of object " .. obj:path() .. " due to error " .. err, 3)
+    end
+  
+    local changed = false
+    --1: iterate over custom keys existing in the object and update their values if necessary
+    for n = 1, #custkeys do --iterate over all existing keys
+      local custkey = custkeys[n]
+      local requiredval = kvtab[tostring(custkey)]
+      if requiredval then --is there a value?
+        if JSON.encode(requiredval) ~= JSON.encode(custvalues[n]) then
+          custvalues[n] = requiredval
+          changed = true
+        end
+      end
+      --remove this pair from the table since it was updated
+      kvtab[tostring(custkey)] = nil
+    end
+  
+    for newkey, newvalue in pairs(kvtab) do
+      if not allownewkey then
+        error("Creation of new keys was not allowed! Could not create key " .. tostring(newkey)
+          .. " for object " .. obj:path())
+      end
+      changed = true
+      table.insert(custkeys, newkey)
+      table.insert(custvalues, newvalue)
+    end
+    obj.CustomOptions.CustomTables.CustomTableName = custkeys
+    obj.CustomOptions.CustomTables.TableData = custvalues
+  
+    if changed then
+      local o, e = pcall(function() obj:commit() end)
+      if not o then
+        error("Could not commit custom table change due to error " .. e)
+      end
+    end
+    return changed
+  end
+  
+  -------------- STATELESS FUNCTIONS --------------
+  --used if the library is not used as a wrapper for a inmation table holder
+  
+  function tbl:GETTABLE(args)
+    if not args then
+      error("arguments are empty!", 2)
+    end
+    if not args.object then
+      error("field 'object' is not existent in the args table!", 2)
+    end
+    if not O:EXISTS{object = args.object} then
+      error("field 'object' does not hold a valid inmation object!", 2)
+    end
+    if not args.key then
+      error("There are no custom key(s) given!", 2)
+    end
+    if type(args.key) ~= 'string' then
+      error("Invalid type for key: " .. args.key:type())
+    end
+    local custkeys, custvalues
+    local ok, err = pcall(function()
+        custkeys = args.object.CustomOptions.CustomTables.CustomTableName
+        custvalues = args.object.CustomOptions.CustomTables.TableData
+      end)
+    if not ok then
+      error("could not access custom tables of object " .. args.object:path() .. " due to error " .. err, 2)
+    end
+  
+    local getvalue = function(key)
+      for n = 1, #custkeys do
+        if tostring(custkeys[n]) == tostring(key) then --keys are case sensitive!
+          return custvalues[n]
+        end
+      end
+      return nil
+    end
+  
+    --only one key queried
+    if type(args.key) == 'string' then
+      return getvalue(args.key)
+    end
+  
+    -- --multiple keys
+    -- local vals = {}
+    -- local nilkeys = {}
+    -- if type(args.key) == 'table' then
+    --   for _, key in ipairs(args.key) do
+    --     local val = getvalue(key)
+    --     if val then
+    --       table.insert(vals, val)
+    --     else
+    --       table.insert(nilkeys, key)
+    --     end
+    --   end
+    --   if nilkeys then
+    --     return vals, nilkeys
+    --   else
+    --     return vals, nil
+    --   end
+    -- end
+    -- return nil
+  end
+  
+  
+  function tbl:SETTABLE(args)
+    --check arguments
+    if not args then
+      error("arguments are empty!", 2)
+    end
+    if type(args)~='table' then
+      error("Invalid argument type: " .. type(args), 2)
+    end
+    if not args.object then
+      error("field 'object' is not existent in the args table!", 2)
+    end
+    if not O:EXISTS{object = args.object} then
+      error("field 'object' does not hold a valid inmation object!", 2)
+    end
+    if not args.key then
+      error("There are no custom key(s) given!", 2)
+    end
+    if not args.value then
+      error("There are no custom value(s) given!", 2)
+    end
+    if type(args.key) ~= 'string' then
+      error("Invalid type for key: " .. type(args.key))
+    end
+    if type(args.value) ~= 'table' then
+      error("Invalid type for value: " .. type(args.value))
+    end
+    local createkeys = true
+    if args.disallownewkeys then
+      createkeys = false
+    end
+  
+    --normal set
+    if type(args.key) == 'string' and type(args.value) == 'table' then
+      local ok, err = pcall(function()
+          self:_upsertcustomtab(args.object, {[args.key] = args.value}, createkeys)
+        end)
+      if not ok then
+        error("Could not set custom tables for object " .. args.object:path() .. ", error: " .. err, 2)
+      end
+    end
+  
+    -- --table key/values
+    -- local kvtab = {}
+    -- for i=1, #(args.key) do
+    --   if args.key[i] then
+    --     kvtab[args.key[i]] = args.value[i]
+    --   end
+    -- end
+    -- local ok, err = pcall(function() self:_upsertcustom(args.object, kvtab, createkeys)  end)
+    -- if not ok then
+    --   error("Could not set custom properties for object " .. args.object:path() .. ", error: " .. err, 2)
+    -- end
+end
+
+-- function tbl:_reset()
+--     self.state =
+--     {
+--         mode = "persistoncommand", --or "persistimmediately"
+--         holderobj = nil, --is not set for stateless calls
+--         data = {}, --stateless calls inject the table data here
+--         columns = {}, --columns[columnname] = true
+--         insync = false, --means that the holders table and the table inside this object are potentially out of sync
+--         schema = nil,
+--         columnssynchronized = false, --means that a non-empty table was read and the columns were extracted
+--         emptyinimage = false, --means that the table was empty on last reading from the holder
+--         wasnewcreated = false, --means that the table was new created at the time of initialization
+--     }
+-- end
+
+function tbl:VALIDATETABLE(sometable, schema)
+    if not sometable or type(sometable) ~= 'table' then
+        error("argument number 1 is invalid! type " .. type(sometable), 2)
+    end
+    if not schema or type(schema) ~= 'table' then
+        error("argument number 2 is invalid! type " .. type(schema), 2)
+    end
+
+    if #sometable == 0 then
+        error("Empty or non-ordered table passed!", 2)
+    end
+
+    --add the columns
+    self:_syncfromimage(sometable)
+
+    --check schema validity and set if possible
+    local ok, err = self:_inputschema(schema)
+    if not ok then
+        error("Error validating input schema: " .. err, 2)
+    end
+    self:_setschema(schema)
+
+    --do check
+    local ok, err = self:VALIDATESCHEMA()
+    return ok, err
+end
+
 
 return tbl
 

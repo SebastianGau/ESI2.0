@@ -283,6 +283,66 @@ O:SETCONFIGURATIONTABLE{tablename="healthcalculationstemplate",aliastree={"typen
 setconfigurationtable = function(self, tablename, systemalias, objectalias, list)
 ```
 
+### SETTABLE / GETTABLE
+
+Sets or gets a custom table. Returns nil if the custom table with specified key is nonexistent.
+
+```lua
+local tab = require 'esi-tables'
+local s = inmation.getself()
+tab:SETTABLE{object = s, key = "key1", value = {{col1 = 1}, {col2 = 2}}}
+tab:SETTABLE{object = s, key = "key2", value = {{col3 = 1}, {col4 = false}}}
+tab:SETTABLE{object = s, key = "key3", value = {{col1 = 1}, {col2 = false}, {col3 = "a"}}}
+
+local t1 = tab:GETTABLE{object = s, key = "key1"}
+if t1[1].col1 ~= 1 then error("Invalid value!") end
+local t2 = tab:GETTABLE{object = s, key = "key2"}
+if t2[1].col3 ~= 1 then error("Invalid value!") end
+```
+
+### VALIDATETABLE
+
+Works analogue to :VALIDATESCHEMA(), but works with passed tables
+
+```lua
+local tab = require 'esi-tables'
+local s = inmation.getself()
+tab:SETTABLE{object = s, key = "key3", value = {{col1 = 1}, {col2 = false}, {col3 = "a"}}}
+local t3 = tab:GETTABLE{object = s, key = "key3"}
+local schema =
+{
+    columns = 
+    {
+        {
+            name = "col1",
+            required = true, --the column is mandatory
+            unique = true, --the column has to feature unique values
+            nonempty = false, --all values in the column have to be nonemoty
+            valueset = {1, 2, 3}, --means that the values in the table have to be either 1, 2 or 3
+        },
+        {
+            name = "col2",
+            required = true,
+            unique = true,
+            nonempty = false,
+            valueset = {luatype="boolean"},
+        },
+        {
+            name = "col3",
+            required = true,
+            unique = false,
+            nonempty = false,
+            valueset = {luatype="string"},
+        },
+    },
+    maxrows = 3,
+}
+local ok, err = tab:VALIDATETABLE(t3, schema)
+if not ok then
+    error("Schema validation should have passed but failed with error " .. err)
+end
+```
+
 ## Breaking changes
 
 - Not Applicable

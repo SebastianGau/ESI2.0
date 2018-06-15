@@ -391,6 +391,9 @@ local SQLQueries =
 }
 
 function SQLQueries:SetDBName(dbname)
+    if not dbname or dbname == "" then
+        error("dbname is empty!", 2)
+    end
     self.dbname = dbname
 end
 
@@ -673,6 +676,7 @@ end
 
 function ADG:SELECTDATABASE(databasename)
     local sql = 'USE ' .. databasename
+    SQLQueries:SetDBName(databasename)
     self.DB:EXECUTE(sql)
 end
 
@@ -873,7 +877,7 @@ function ADG:GETDASHBOARDSBYDESCRIPTION(DashboardDescription)
     local sql = SQLQueries:GetDashboardsByDescription():format(DashboardDescription)
     local dashboards = {}
     for _, row in pairs(self.DB:EXECUTE(sql)) do
-        table.insert(dashboards, row[2])
+        table.insert(dashboards, {id = row[1], name = row[2]})
     end
     return dashboards
 end
@@ -1170,7 +1174,7 @@ function ADG:ADDWIDGETTODASHBOARD(DashboardName, inmationobject, options, opts)
         vkpiMappingData.ObjectType = self.MappingTable[lookup].ObjectType
         vkpiMappingData.WidgetType = self.MappingTable[lookup].WidgetType
         vkpiMappingData.MetaDescription = self.MappingTable[lookup].MetaDescription
-        vkpiMappingData.URI = 'null' 
+        vkpiMappingData.URI = ''  --'null'
         vkpiMappingData.LinkDashboard = true
     else
         error("Invalid type for inmationobject! Expected table (inmation object), got " .. type(inmationobject), 2)

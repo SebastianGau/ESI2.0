@@ -158,11 +158,12 @@ function _ODBCConnection:_ascii(s)
     local ret = ""
     local o, e = pcall(function() ret = inmation.utf8toascii(s) end)
     if not o then
+        error("Could not convert " .. s .. " to ascii! error " .. e)
         return s
     end
     return ret
 end
-
+ 
 -- converts all strings from the source to UTF-8
 function _ODBCConnection:_utf8(s)
     --if self.utf8 then return s end
@@ -170,6 +171,7 @@ function _ODBCConnection:_utf8(s)
     local ret = ""
     local o, e = pcall(function() ret = inmation.asciitoutf8(s)end)
     if not o then
+        error("Could not convert " .. s .. " to utf8! error " .. e)
         return s
     end
     return ret
@@ -191,7 +193,7 @@ function _ODBCConnection:_breakodbcerror(s)
         self.INFOS.VENDORNAME = self.INFOS.VENDORNAME or t[1]:gsub('%[','') --Microsoft
         self.INFOS.DRIVERNAME = self.INFOS.DRIVERNAME or t[2]:gsub('%[','') --ODBC SQL Server Driver
         self.INFOS.PRODUCTNAME = self.INFOS.PRODUCTNAME or t[3]:gsub('%[','') --SQL Server
-        e=t[4]
+        e = t[4]
     end
     return e
 end
