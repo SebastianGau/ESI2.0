@@ -6,18 +6,17 @@ local JSON = require 'dkjson'
 local _ODBCStatistics = {}
 _ODBCStatistics.data = nil --a field for accumulating  statistical information about an odbc connection
 
-function     _ODBCStatistics:_prec(num, prec)
+function _ODBCStatistics:_prec(num, prec)
     prec = prec or 2
     return tonumber(string.format(string.format("%%.%df",prec),num))
 end
 
-function _ODBCStatistics:_new(o)
-    --without the deepcopy(self) here, all table field of the object point to the same table
-    o = {}
+function _ODBCStatistics:_new()
+    local o = {}
     self.__index = self
     setmetatable(o, self)
 
-    o.data = 
+    o.data =
     {
         INITTIME = inmation.currenttime(),
         INITTIMELOCAL = inmation.gettime(inmation.currenttime(true)):gsub("Z",""),
@@ -45,7 +44,7 @@ function _ODBCStatistics:_new(o)
     }
     return o
 end
-    
+
 --merge the statistics given query with those of the past queries
 function _ODBCStatistics:_mergestatistics(stats)
     self.data.CALLS = self.data.CALLS + 1
@@ -53,8 +52,10 @@ function _ODBCStatistics:_mergestatistics(stats)
         self.data.RECENT = stats
         if stats.QUERY then
             self.data.PERFORMANCE.READ.CALLS = self.data.PERFORMANCE.READ.CALLS + 1
-            self.data.PERFORMANCE.READ.OVERALLMB = self.data.PERFORMANCE.READ.OVERALLMB + stats.QUERY.BYTECOUNT/(1024*1024)
-            self.data.PERFORMANCE.READ.OVERALLRECORDS = self.data.PERFORMANCE.READ.OVERALLRECORDS + stats.QUERY.RECORDCOUNT
+            self.data.PERFORMANCE.READ.OVERALLMB = self.data.PERFORMANCE.READ.OVERALLMB
+            + stats.QUERY.BYTECOUNT/(1024*1024)
+            self.data.PERFORMANCE.READ.OVERALLRECORDS = self.data.PERFORMANCE.READ.OVERALLRECORDS
+            + stats.QUERY.RECORDCOUNT
             local tput = stats.QUERY.BYTEPERSECOND/(1024*1024)
 
             if self.data.PERFORMANCE.READ.CALLS == 1 then
@@ -69,13 +70,15 @@ function _ODBCStatistics:_mergestatistics(stats)
             end
         elseif stats.EXECUTE then
             if stats.EXECUTE.ROWS_AFFECTED > 0 then
-                self.data.PERFORMANCE.WRITE.OVERALLRECORDS = self.data.PERFORMANCE.WRITE.OVERALLRECORDS + stats.EXECUTE.ROWS_AFFECTED
+                self.data.PERFORMANCE.WRITE.OVERALLRECORDS = self.data.PERFORMANCE.WRITE.OVERALLRECORDS
+                + stats.EXECUTE.ROWS_AFFECTED
             end
             self.data.PERFORMANCE.WRITE.CALLS = self.data.PERFORMANCE.WRITE.CALLS + 1
             if self.data.PERFORMANCE.WRITE.CALLS == 1 then
                 self.data.PERFORMANCE.WRITE.AVGTIMEPEREXECUTE_MS = stats.EXECUTE.TIME
             else
-                self.data.PERFORMANCE.WRITE.AVGTIMEPEREXECUTE_MS = (self.data.PERFORMANCE.WRITE.AVGTIMEPEREXECUTE_MS + stats.EXECUTE.TIME)/2
+                self.data.PERFORMANCE.WRITE.AVGTIMEPEREXECUTE_MS = (self.data.PERFORMANCE.WRITE.AVGTIMEPEREXECUTE_MS
+                + stats.EXECUTE.TIME)/2
             end
         else
             error("Invalid stats table passed! " .. JSON.encode(stats))
@@ -152,7 +155,7 @@ _ODBCConnection.INFOS=
 }
 
 -- converts a string from UTF-8 to ASCII
-function _ODBCConnection:_ascii(s)
+function _ODBCConnection._ascii(_, s)
     --if self.utf8 then return s end
     --error("convert using codepage " .. tostring(self.codepage))
     local ret = ""
@@ -163,9 +166,9 @@ function _ODBCConnection:_ascii(s)
     end
     return ret
 end
- 
+
 -- converts all strings from the source to UTF-8
-function _ODBCConnection:_utf8(s)
+function _ODBCConnection._utf8(_, s)
     --if self.utf8 then return s end
     --error("convert using codepage " .. tostring(self.codepage))
     local ret = ""
@@ -179,7 +182,7 @@ end
 
 -- splits multi-line strings into a table as they are returned from ODBC drivers
 -- (this rather belongs in a string utils library)
-function _ODBCConnection:_splitstring(s, sep)
+function _ODBCConnection._splitstring(_, s, sep)
     local r={}
     sep=sep or '\n'
     s:gsub(string.format('([^%s]+)',sep), function(x) r[#r+1]=x end)
@@ -214,8 +217,8 @@ end
 -- tests the connection for vendor, driver, product
 function _ODBCConnection:_initvendorinfo()
     local sql = "SELECT * FROM __1very2unlikely3to4exist__"
-    local match = "%[([^%[^%]]-)%]%[([^%[^%]]-)%]%[([^%[^%]]-)%]" 
-    local _, e = self.STATE.CONNECTION:execute(sql)    
+    local match = "%[([^%[^%]]-)%]%[([^%[^%]]-)%]%[([^%[^%]]-)%]"
+    local _, e = self.STATE.CONNECTION:execute(sql)
     if e then
         --e = self:_utf8(tostring(e)):gsub("nil","")
         if type(e) == "string" and #e > 0  then
@@ -224,7 +227,7 @@ function _ODBCConnection:_initvendorinfo()
             self.INFOS.DRIVERNAME = driver or  self.INFOS.DRIVERNAME--ODBC SQL Server Driver
             self.INFOS.PRODUCTNAME = product or  self.INFOS.PRODUCTNAME--SQL Server
             self.INFOS.INIT = true
-        end  
+        end
     end
 end
 
@@ -254,9 +257,9 @@ end
 function _ODBCConnection:CLOSE()
     if self.STATE.STATUS == self.STATUS.CLOSED then
         return nil
-    else    
+    else
         local ok, err = pcall(function()
-            self.STATE.CONNECTION:close() 
+            self.STATE.CONNECTION:close()
             self.STATE.CONNECTION = nil
             self.STATE.ENVIRONMENT:close()
             self.STATE.ENVIRONMENT = nil
@@ -265,7 +268,7 @@ function _ODBCConnection:CLOSE()
         end)
         if not ok then
             error("Could not close ODBC connection: " .. err, 2)
-        end        
+        end
     end
 end
 
@@ -285,7 +288,7 @@ function _ODBCConnection:EXECUTE(query)
         error("Cannot execute: Connection is closed!", 2)
     end
 
-    if type(query)~="string" or #query==0 then 
+    if type(query)~="string" or #query==0 then
         error("Invalid query " .. tostring(query) .. " provided of type " .. type(query), 2)
     end
 
@@ -294,7 +297,6 @@ function _ODBCConnection:EXECUTE(query)
     end
 
     local r = {}
-    
     r.DATA = {}
     local starttime = inmation.currenttime()
     r.STATISTICS = {}
@@ -303,7 +305,7 @@ function _ODBCConnection:EXECUTE(query)
     r.STATISTICS.CONNECTION = BUCKET.DEEPCOPY(self.INFOS)
 
     local result = 0
-    local execerr 
+    local execerr
     self.STATE.CURSOR, execerr = self.STATE.CONNECTION:execute(self:_ascii(query))
     if self.STATE.CURSOR == nil and "string" == type(execerr) and #execerr > 0 then
         error("Error executing query " .. query .. ", Error: " .. tostring(execerr), 2)
@@ -327,7 +329,6 @@ function _ODBCConnection:EXECUTE(query)
             r.STATISTICS.COLUMNS = {}
             r.STATISTICS.COLUMNS.NAMES = self.STATE.CURSOR:getcolnames()
             r.STATISTICS.COLUMNS.TYPES = self.STATE.CURSOR:getcoltypes()
-            
             local row = self.STATE.CURSOR:fetch({}, 'n')
             while row do
                 r.STATISTICS.ROWCOUNT = r.STATISTICS.ROWCOUNT + 1
@@ -360,7 +361,8 @@ function _ODBCConnection:EXECUTE(query)
             --check for unknown datatypes (PERHAPS DRIVER-DEPENDENT)
             for i=1, #r.STATISTICS.COLUMNS.NAMES do
                 if r.STATISTICS.COLUMNS.TYPES[i] == nil then
-                    error("Unknown datatype detected for column " ..  r.STATISTICS.COLUMNS.NAMES[i] .. " , consider converting types within the sql query: " .. query)
+                    error("Unknown datatype detected for column " ..  r.STATISTICS.COLUMNS.NAMES[i] ..
+                    " , consider converting types within the sql query: " .. query)
                 end
             end
 
@@ -412,7 +414,6 @@ function _ODBCConnection:_new(args)
     o.STATISTICS = BUCKET.DEEPCOPY(self.STATISTICS)
     o.STATE = BUCKET.DEEPCOPY(self.STATE)
     o.STATUS = BUCKET.DEEPCOPY(self.STATUS)
-    
     --it was made sure in the connection factory that these fields exist
     o.STATE.NAME = args.Name
     o.STATE.DSN = args.DSN
@@ -448,14 +449,14 @@ function _ODBCConnection:_new(args)
 
     self.__index = self
     local instance = setmetatable(o, self)
-    
+
     --if autoclose is off, establish connection
     --otherwise, connection will be established on query execution
     if not self.STATE.AUTOCLOSE then
-        local o, e = pcall(function() 
+        local okk, e = pcall(function()
             instance:CONNECT()
         end)
-        if not ok then 
+        if not okk then
             error("Could not establish connection: " .. e, 2)
         end
     end
@@ -496,7 +497,7 @@ function lib.INFO()
             dependencies = {
                 {
                     modulename = 'luasql.odbc',
-                    version = 
+                    version =
                     {
                         major = 0,
                         minor = 1,
@@ -525,14 +526,16 @@ lib.MODE =
 
 
 -- local dbobj = db:GETCONNECTION{
---     Name = "qawd", --can be set to standard value, is the identifier of the connection, internally the returned connection object is tracked in a table
+--     Name = "qawd", --can be set to standard value, is the identifier of the connection,
+--      internally the returned connection object is tracked in a table
 --     DSN = "asd", --has to be provided
 --     User = "asd", --can be set to standard value
 --     Password = "pw", --can be set to standard value
 --     Maxrecords = 1000, --can be set to standard value, how many records can be fetched at maximum in one query
 --     Codepage = 0, --can be set to standard value,
---     Autoclose = false, --whether the connection is opened and closed on demand when executing a query, by default true
---     Itermode = db.MODE.NUMBERINDEX --also db.MODE.COLNAMEINDEX: determines whether the tableiterator returns a lua table whose keys are numbers (0) or the column names
+--     Autoclose = false, --whether the connection is opened and closed on demand when executing a query, default true
+--     Itermode = db.MODE.NUMBERINDEX --also db.MODE.COLNAMEINDEX: determines whether the tableiterator returns a lua
+--      table whose keys are numbers (0) or the column names
 -- }
 --or if a connection
 lib.connections = {} --holds the connection objects 

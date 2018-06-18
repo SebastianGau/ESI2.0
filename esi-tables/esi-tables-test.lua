@@ -15,7 +15,7 @@ if existedbefore then
 end
 --command creates table if it is not existent or reads it if existent
 --this also works:
--- local t1 = tab:NEW{path = path .. "/testtable", mode="persistoncommand"} 
+-- local t1 = tab:NEW{path = path .. "/testtable", mode="persistoncommand"}
 -- "persistoncommand" standard, "persistimmediately" resulsts in bad performance but immediate persistance
 
 local save = function()
@@ -42,7 +42,7 @@ end
 local updated = t:UPDATE
 { 
     WHERE = {Testnumber = 2, col2 = "entry1"}, --a nonexistent column here will result in an error
-    SET = {col3 = "somethingupdated", col4 = "wasupdated"}, 
+    SET = {col3 = "somethingupdated", col4 = "wasupdated"},
 }
 assert(updated==1, "should be 1, is " .. updated)
 save()
