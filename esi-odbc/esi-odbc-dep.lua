@@ -1,6 +1,29 @@
 -- esi-odbc
-local BUCKET = require 'esi-bucket'
+local BUCKET = {}
 local JSON = require 'dkjson'
+
+
+--to remove depency from BUCKET
+function BUCKET.DEEPCOPY (t, recdepth)
+    recdepth = recdepth or 0
+    if type(t) ~= "table" then return t end
+    local meta = getmetatable(t)
+    local target = {}
+    for k, v in pairs(t) do
+        if type(v) == "table" then
+            recdepth = recdepth + 1
+            if recdepth > 30 then
+            error("Maximum recursion depth of 30 exceeded!")
+            end
+            target[k] = BUCKET.DEEPCOPY(v, recdepth)
+        else
+            target[k] = v
+        end
+    end
+    setmetatable(target, meta)
+    return target
+end
+
 
 -- Scope: The collection of statistical information about ODBC calls in this library
 local _ODBCStatistics = {}

@@ -11,7 +11,7 @@ local json = require 'dkjson'
 
 local data = 
   {
-    ["dsn"] = "vkpiadmin1",
+    ["dsn"] = "VKPI",
     ["user"] = "sa",
     ["password"] = "1877Mtk!1"
   }
@@ -46,7 +46,7 @@ local q  = [[SELECT convert(nvarchar(50), ID) as ID, Name FROM VisualKPI.dbo.tab
 
 --THIS LEADS TO AN ERROR:
 --local q  = [[SELECT ID, Name FROM VisualKPI.dbo.tableProfiles]]
---problem: ID leads to an unknown datatype in the driver, i impmented that this throws an error
+--problem: ID leads to an unknown datatype in the driver, I impmented that this throws an error
 
 local profs1 = {}
 for rownum, row in pairs(dbobj:EXECUTE(q)) do

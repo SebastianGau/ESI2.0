@@ -58,7 +58,9 @@ end
 
 local bucket = bucket or {}
 
-function bucket.DEEPCOPY (t) 
+function bucket.DEEPCOPY (t, recdepth)
+  
+  recdepth = recdepth or 0
   -- deep-copy a table (used for oop object initialization)
   -- useage:
   --  b = {{},{},{}}
@@ -68,7 +70,11 @@ function bucket.DEEPCOPY (t)
   local target = {}
   for k, v in pairs(t) do
     if type(v) == "table" then
-      target[k] = bucket.DEEPCOPY(v)
+      recdepth = recdepth + 1
+      if recdepth > 30 then
+        error("Maximum recursion depth of 30 exceeded!")
+      end
+      target[k] = bucket.DEEPCOPY(v, recdepth)
     else
       target[k] = v
     end
