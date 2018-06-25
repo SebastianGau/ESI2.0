@@ -211,6 +211,8 @@ if t1[1].col1 ~= 1 then error("Invalid value!") end
 local t2 = tab:GETTABLE{object = s, key = "key2"}
 if t2[1].col3 ~= 1 then error("Invalid value!") end
 
+
+--check schema validation
 local t3 = tab:GETTABLE{object = s, key = "key3"}
 local schema =
 {

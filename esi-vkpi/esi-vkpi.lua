@@ -816,6 +816,16 @@ function ADG:CLEARPROFILE(ProfileName)
     return true
 end
 
+function ADG:GETCURRENTDATABASE()
+    local sql = "SELECT db_name() as dbname"
+    local ret = self.DB:EXECUTE(sql)
+    if #ret == 0 or not ret[1] or not ret[1][1] then
+        local J = require 'dkjson'
+        error("Could not get current database: " .. J.encode(ret), 2)
+    end
+    return ret[1][1]
+end
+
 
 
 --creates a profile with a specified name and parent group EVEN IF IT EXISTS!
