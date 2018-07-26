@@ -653,6 +653,9 @@ function ADG:new()
 end
 
 function ADG:CONNECTDATABASE(instancename, connection)
+    if not connection then
+        error("Connection table (argument #2) is nil!", 2)
+    end
     if not connection.dsn then error("You have to specify a odbc dsn!", 2) end
     if not connection.user then error("You have to specify a database user!", 2) end
     if not connection.password then connection.password = "" end

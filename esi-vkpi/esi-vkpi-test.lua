@@ -1,8 +1,9 @@
 local VKPI = require 'esi-vkpi'
 local JSON = require 'dkjson'
 
-VKPI:CONNECTDATABASE()
-VKPI:SELECTDATABASE("admin")
+VKPI:CONNECTDATABASE("vkpi", {dsn = "VKPI", user = "sa", password = "..."})
+--first argument is just a name for internal connection name
+VKPI:SELECTDATABASE("visualkpiuser") --visualkpiqa, visualkpi
 
 VKPI:CLEARCURRENTDATABASE()
 
