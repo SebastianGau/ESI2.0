@@ -1,5 +1,5 @@
 --esi-vkpi
-local ODBC = require 'esi-odbc'
+local ODBC = require 'esi-odbc-dep'
 local BUCKET = require 'esi-bucket'
 local TAB = require 'esi-tables'
 local O = require 'esi-objects'
@@ -328,6 +328,16 @@ local VKPIMappingTable =
         ObjectType = 1,
         WidgetType = 1,
         URIWithoutID = "?pid=20&kx=1&pct=3&kv=7&gid=", --&fromtime=*-1 Days&totime=* 
+        PossibleWidhts = {["2"] = true, ["4"] = true},
+        StandardWidth = 4,
+        PossibleHeights = {["4"] = true, ["8"] = true, ["12"] = true},
+        StandardHeight = 4
+    },
+    KPISummaryHistoryAlertTime = {
+        MetaDescription = "KPI Summary History",
+        ObjectType = 1,
+        WidgetType = 1,
+        URIWithoutID = "?pid=20&kv=7&kx=1&pct=4&gid=", --?pid=20&kv=7&kx=1&pct=4
         PossibleWidhts = {["2"] = true, ["4"] = true},
         StandardWidth = 4,
         PossibleHeights = {["4"] = true, ["8"] = true, ["12"] = true},
@@ -1172,7 +1182,9 @@ function ADG:ADDWIDGETTODASHBOARD(DashboardName, inmationobject, options, opts)
         vkpiMappingData.WidgetType = self.MappingTable[lookup].WidgetType
         vkpiMappingData.MetaDescription = self.MappingTable[lookup].MetaDescription
         vkpiMappingData.URI = self.MappingTable[lookup].URIWithoutID .. vkpiMappingData.ObjectID
-    elseif type(inmationobject)=='string' and (type(options)=='nil' or type(options)=='table') and type(opts)=='nil' then --treat dashboard links
+    
+        --treat dashboard links
+    elseif type(inmationobject)=='string' and (type(options)=='nil' or type(options)=='table') and type(opts)=='nil' then 
         --treat dashboard links
         local lookup = "DashboardLink"
         vkpiMappingData = {}
@@ -1385,13 +1397,17 @@ function ADG:_identifyInmationObject(inmationobject, options)
             end
         end
 
-        --------------------treatmeant of all other inmation objects 
+        --embedded content
+    elseif type_code == inmation.model.classes.KPIEmbeddedContent then
+        propertypath = ".KPIID"
+        lookup = "EmbeddedContent"
     else
+        --------------------treatmeant of all other inmation objects 
         error("incompatible object type: " .. type_meaning .. ", only chart and kpi objects are supported at the moment!", 4)
     end
     local vkpiObjectID = inmation.getvalue(inmationobject:path() .. propertypath)
     if lookup == nil then
-        error("unsupported vkpi object!", 4)
+        error("unsupported vkpi object: " .. inmationobject:path(), 4)
     end
     return lookup, vkpiObjectID
 end
